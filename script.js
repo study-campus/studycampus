@@ -3,10 +3,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/fireba
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-analytics.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
-// 사용자의 파이어베이스 프로젝트 구성 데이터
+// 🔥 미국 서버 주소(databaseURL)가 추가된 완벽한 설정 코드
 const firebaseConfig = {
     apiKey: "AIzaSyCHwxv-MJBK8wXA4C1Q98jDEh_ESRbhaBI",
     authDomain: "studycampus-6e42f.firebaseapp.com",
+    databaseURL: "https://studycampus-6e42f-default-rtdb.firebaseio.com",
     projectId: "studycampus-6e42f",
     storageBucket: "studycampus-6e42f.firebasestorage.app",
     messagingSenderId: "1076988511909",
@@ -61,14 +62,15 @@ function initTheme() {
 // ==========================================
 const dbRef = ref(db, 'studycampus_data');
 
+// 데이터가 변경될 때마다 자동으로 화면을 새로고침하는 핵심 로직
 onValue(dbRef, (snapshot) => {
     const serverData = snapshot.val();
     if (serverData) {
         AppState.data = serverData;
     } else {
-        set(dbRef, AppState.data); // 서버가 비어있으면 초기 세팅 업로드
+        set(dbRef, AppState.data); // 서버가 비어있으면 초기 세팅 전송
     }
-    renderCurrentDashboard(); // 데이터 수신 시 화면 즉시 새로고침
+    renderCurrentDashboard(); // 데이터 수신 시 화면 즉시 렌더링
 });
 
 function syncData() {
@@ -251,7 +253,6 @@ function initializeAppLogic() {
     initTheme();
     switchView(AppState.currentUser ? (AppState.currentUser.role === 'admin' ? 'admin' : 'student') : 'landing');
 
-    // 1. 모든 Click 이벤트 통합 제어
     document.body.addEventListener('click', (e) => {
         if (e.target.dataset.action === 'nav') switchView(e.target.dataset.target);
         else if (e.target.dataset.action === 'auth-toggle') {
@@ -288,7 +289,6 @@ function initializeAppLogic() {
         }
     });
 
-    // 2. 모든 Submit 이벤트 통합 제어
     document.body.addEventListener('submit', (e) => {
         e.preventDefault();
         if (e.target.id === 'auth-form') handleAuthSubmit(e);
