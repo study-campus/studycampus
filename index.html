@@ -7,21 +7,22 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 상단 네비게이션 바 (테마 변경 버튼 삭제) -->
     <header class="navbar">
         <div class="logo" onclick="showView('landing')">StudyCampus</div>
         <nav>
             <ul class="nav-links" id="nav-links">
-                </ul>
+                <!-- 자바스크립트에서 로그인 상태에 따라 동적 렌더링 -->
+            </ul>
         </nav>
         <div class="nav-actions">
-            <button id="theme-toggle" class="btn-secondary">테마 변경</button>
             <span id="user-profile-tag" class="profile-tag hidden"></span>
             <button id="auth-action-btn" class="btn-primary" onclick="handleAuthAction()">로그인</button>
         </div>
     </header>
 
     <main class="container">
-        
+        <!-- [1] 메인 랜딩 페이지 -->
         <section id="view-landing" class="view">
             <div class="hero">
                 <h1>스스로 학습하고 완성하는 미래<br><span class="highlight">StudyCampus</span></h1>
@@ -44,6 +45,7 @@
             </div>
         </section>
 
+        <!-- [2] 인증 페이지 (관리자 힌트 문구 삭제) -->
         <section id="view-auth" class="view hidden">
             <div class="auth-box">
                 <div class="auth-tabs">
@@ -66,10 +68,10 @@
                     </div>
                     <button type="submit" class="btn-block" id="auth-submit-btn">로그인</button>
                 </form>
-                <div class="admin-hint">💡 관리자 테스트 계정<br>ID: studycampus / PW: studycampus26</div>
             </div>
         </section>
 
+        <!-- [3] 학생용 대시보드 페이지 -->
         <section id="view-student" class="view hidden">
             <div class="dashboard-layout">
                 <aside class="sidebar">
@@ -83,10 +85,12 @@
                     </ul>
                 </aside>
                 <section class="dash-content" id="student-dash-content">
-                    </section>
+                    <!-- 하위 탭 렌더링 영역 -->
+                </section>
             </div>
         </section>
 
+        <!-- [4] 관리자용 대시보드 페이지 -->
         <section id="view-admin" class="view hidden">
             <div class="dashboard-layout">
                 <aside class="sidebar admin-sidebar">
@@ -102,17 +106,17 @@
                     </ul>
                 </aside>
                 <section class="dash-content" id="admin-dash-content">
-                    </section>
+                    <!-- 하위 탭 렌더링 영역 -->
+                </section>
             </div>
         </section>
-
     </main>
 
     <footer class="footer">
         <div class="footer-content">
-            <h4>StudyCampus (스터디캠퍼스 주식회사)</h4>
-            <p>대표자: 홍길동 | 사업자등록번호: 123-45-67890 | 통신판매업신고: 제 2026-고양덕양-0000호</p>
-            <p>주소: 경기도 고양시 덕양구 권율대로 | 고객센터: 1588-0000 | 이메일: support@studycampus.edu</p>
+            <h4>StudyCampus</h4>
+            <p>대표자: 이지호 | 사업자등록번호: - | 통신판매업신고: -</p>
+            <p>주소: - | 고객센터: - | 이메일: -</p>
             <p class="copyright">&copy; 2026 StudyCampus. All rights reserved. Powered by Auto-Save System.</p>
         </div>
     </footer>
