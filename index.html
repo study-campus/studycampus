@@ -9,83 +9,153 @@
 <body>
     <div id="toast-container"></div>
 
-    <header class="app-header global-element" id="main-nav">
-        <div class="logo" data-action="nav" data-target="landing">
-            <span class="logo-icon">📘</span> StudyCampus
+    <header class="global-header global-element" id="main-nav">
+        <div class="logo-font" data-action="nav" data-target="landing">studycampus</div>
+        <div class="nav-center">
+            <span>왜 StudyCampus?</span>
+            <span>학습 시스템</span>
+            <span>커리큘럼</span>
         </div>
-        <div class="nav-actions">
-            <span id="user-profile-tag" class="hidden"></span>
-            <button id="auth-action-btn" class="btn-text" data-action="auth-toggle">로그인</button>
+        <div class="nav-right">
+            <span id="user-profile-tag" class="hidden" style="margin-right:15px; font-weight:bold; color:white;"></span>
+            <button class="btn-text" data-action="auth-toggle">로그인</button>
+            <button class="btn-primary btn-sm" data-action="nav" data-target="auth" style="margin-left:10px;">회원가입</button>
         </div>
     </header>
 
-    <main class="global-element" style="flex:1;">
-        <section id="view-landing" class="view">
-            <div class="blue-gradient-hero">
-                <p class="subtitle">ENGLISH LIBERATION FORMULA</p>
-                <h1>자기주도학습으로<br>완성되는<br>온라인 스터디</h1>
-                <p class="desc">담임 선생님 1:1 관리 · 매주 피드백</p>
-                <div class="stats-row">
-                    <div><strong>10명</strong><br><span>돌파 수강</span></div>
-                    <div><strong>-등급</strong><br><span>평균 상승</span></div>
-                    <div><strong>-점</strong><br><span> -등급</span></div>
+    <main class="global-element" style="flex:1; display:flex; flex-direction:column;">
+        <section id="view-landing" class="view" style="flex:1;">
+            <div class="landing-container">
+                <div class="hero-banner">
+                    <div class="hero-content">
+                        <p class="hero-sub" id="ld-hero-sub"></p>
+                        <h1 class="hero-title" id="ld-hero-title"></h1>
+                        <p class="hero-desc" id="ld-hero-desc"></p>
+                        <div class="hero-stats">
+                            <div><strong id="ld-s1-n"></strong><br><span id="ld-s1-t"></span></div>
+                            <div><strong id="ld-s2-n"></strong><br><span id="ld-s2-t"></span></div>
+                            <div><strong id="ld-s3-n"></strong><br><span id="ld-s3-t"></span></div>
+                        </div>
+                        <div class="hero-btns">
+                            <button class="btn-white" data-action="nav" data-target="auth">무료 상담 신청</button>
+                            <button class="btn-white-outline" data-action="nav" data-target="auth">학생 로그인</button>
+                        </div>
+                    </div>
+                    <div class="hero-icon">🚀</div>
                 </div>
-                <div class="btn-group">
-                    <button class="btn-white" data-action="nav" data-target="auth">무료 상담 신청</button>
-                    <button class="btn-white-outline" data-action="nav" data-target="auth">입학 테스트</button>
+
+                <h2 class="section-title" id="ld-sec-title"></h2>
+                <div class="feature-cards">
+                    <div class="f-card">
+                        <div>
+                            <span id="ld-f1-b"></span>
+                            <h3 id="ld-f1-t"></h3>
+                            <p id="ld-f1-d"></p>
+                        </div>
+                        <div class="f-emoji" id="ld-f1-e"></div>
+                    </div>
+                    <div class="f-card">
+                        <div>
+                            <span id="ld-f2-b"></span>
+                            <h3 id="ld-f2-t"></h3>
+                            <p id="ld-f2-d"></p>
+                        </div>
+                        <div class="f-emoji" id="ld-f2-e"></div>
+                    </div>
                 </div>
             </div>
-            <div class="feature-boxes">
-                <div class="f-box"><strong>왜 스터디캠퍼스?</strong><p>완벽한 자기주도학습</p></div>
-                <div class="f-box"><strong>노력으로 인한 결과</strong><p>1등급의 비결</p></div>
+            
+            <div class="bottom-cta-banner">
+                <h2 id="ld-bot-title"></h2>
+                <button class="btn-white" data-action="nav" data-target="auth" style="color:var(--primary); margin-top:20px;">학습 시작하기</button>
             </div>
         </section>
 
-        <section id="view-auth" class="view hidden auth-container">
-            <div class="auth-card">
-                <h2 style="margin-bottom:20px;">StudyCampus 시작하기</h2>
-                <div class="auth-tabs">
-                    <button id="tab-login" class="active" data-auth-mode="login">로그인</button>
-                    <button id="tab-register" data-auth-mode="register">회원가입</button>
+        <section id="view-auth" class="view hidden auth-wrapper">
+            <div class="auth-modal" id="modal-login">
+                <button class="btn-back" data-action="nav" data-target="landing">&larr; 홈으로</button>
+                <div class="auth-header">
+                    <h2 class="logo-font" style="font-size:2.5rem; color:#60a5fa; margin-bottom:10px;">studycampus</h2>
+                    <p style="font-weight:700;">로그인</p>
                 </div>
-                <form id="auth-form">
-                    <input type="text" id="auth-id" class="input-field" required placeholder="아이디">
-                    <input type="password" id="auth-pw" class="input-field" required placeholder="비밀번호">
-                    <input type="text" id="auth-name" class="input-field hidden" placeholder="이름">
-                    <button type="submit" class="btn-primary" id="auth-submit-btn">로그인</button>
+                <form id="form-login">
+                    <input type="text" id="login-id" class="auth-input" required placeholder="아이디 또는 연락처">
+                    <input type="password" id="login-pw" class="auth-input" required placeholder="비밀번호">
+                    <button type="submit" class="btn-primary auth-submit">로그인</button>
                 </form>
+                <div class="auth-footer"><span data-action="switch-auth" data-mode="register" style="cursor:pointer;">회원가입</span> &nbsp;|&nbsp; <span style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span></div>
+            </div>
+
+            <div class="auth-modal hidden" id="modal-register">
+                <button class="btn-back" data-action="nav" data-target="landing">&larr; 홈으로</button>
+                <div class="auth-header" style="margin-top:20px;">
+                    <h2 class="logo-font" style="font-size:2.5rem; color:#60a5fa; margin-bottom:10px;">studycampus</h2>
+                    <p style="font-weight:700;">계정 가입</p>
+                </div>
+                <form id="form-register">
+                    <input type="text" id="reg-name" class="auth-input" required placeholder="실명">
+                    <input type="text" id="reg-id" class="auth-input" required placeholder="아이디">
+                    <input type="tel" id="reg-phone" class="auth-input" required placeholder="연락처 (010-0000-0000)">
+                    <div style="display:flex; gap:10px;">
+                        <input type="password" id="reg-pw" class="auth-input" required placeholder="비밀번호">
+                        <input type="password" id="reg-pw-confirm" class="auth-input" required placeholder="비밀번호 확인">
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="reg-school" class="auth-input" placeholder="학교명">
+                        <select id="reg-grade" class="auth-input" style="color:white; font-weight:bold;">
+                            <option value="고1">고1</option><option value="고2" selected>고2</option><option value="고3">고3</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-primary auth-submit" style="margin-top:20px;">가입 완료</button>
+                </form>
+                <div class="auth-footer" style="margin-top:20px;"><span data-action="switch-auth" data-mode="login" style="cursor:pointer; color:var(--text-muted);">&larr; 뒤로</span></div>
             </div>
         </section>
     </main>
 
-    <section id="view-student" class="view hidden app-wrapper">
-        <header class="app-header">
-            <div class="logo">StudyCampus</div>
-            <div class="nav-actions"><button class="btn-text" data-action="auth-toggle">로그아웃</button></div>
+    <section id="view-student" class="view hidden stu-wrapper">
+        <header class="stu-header">
+            <div class="logo-font" style="font-size:1.5rem; color:#60a5fa;">studycampus</div>
+            <div class="stu-header-right">
+                <span style="font-size:20px; cursor:pointer;">🔔</span>
+                <button class="stu-btn-outline" data-action="auth-toggle">로그아웃</button>
+            </div>
         </header>
-        <div class="app-body" id="student-dash-content"></div>
+        <main class="stu-main" id="student-dash-content"></main>
+        <nav class="stu-bottom-nav" id="student-bottom-nav">
+            <div class="stu-nav-item active" data-action="switch-student-tab" data-tab="home"><span class="stu-nav-icon">🏠</span>홈</div>
+            <div class="stu-nav-item" data-action="switch-student-tab" data-tab="homework"><span class="stu-nav-icon">📝</span>숙제</div>
+            <div class="stu-nav-item" data-action="switch-student-tab" data-tab="test"><span class="stu-nav-icon">🎯</span>테스트</div>
+            <div class="stu-nav-item" data-action="switch-student-tab" data-tab="lectures"><span class="stu-nav-icon">💻</span>강의</div>
+            <div class="stu-nav-item" data-action="switch-student-tab" data-tab="materials"><span class="stu-nav-icon">📁</span>자료실</div>
+            <div class="stu-nav-item" data-action="switch-student-tab" data-tab="community"><span class="stu-nav-icon">💬</span>소통</div>
+            <div class="stu-nav-item" data-action="switch-student-tab" data-tab="mypage"><span class="stu-nav-icon">👤</span>MY</div>
+        </nav>
     </section>
 
-    <section id="view-admin" class="view hidden app-wrapper">
-        <header class="app-header">
-            <div class="logo">Admin Center</div>
-            <div class="nav-actions"><button class="btn-text" data-action="auth-toggle">로그아웃</button></div>
+    <section id="view-admin" class="view hidden admin-wrapper">
+        <div class="admin-top-bar">🟢 클라우드 연동중</div>
+        <header class="admin-header">
+            <div class="admin-logo"><span class="logo-font">studycampus</span> <span class="badge-teacher">TEACHER</span></div>
+            <div class="admin-nav-tabs" id="admin-top-nav">
+                <div class="admin-tab active" data-action="switch-admin-tab" data-tab="users">👨‍🎓 원생 관리</div>
+                <div class="admin-tab" data-action="switch-admin-tab" data-tab="deploy">💻 배포 관리</div>
+                <div class="admin-tab" data-action="switch-admin-tab" data-tab="payments">💳 결제 보드</div>
+                <div class="admin-tab" data-action="switch-admin-tab" data-tab="settings">⚙️ 마스터 설정</div>
+            </div>
+            <button class="stu-btn-outline" data-action="auth-toggle">로그아웃</button>
         </header>
-        <div class="app-sidebar-layout">
-            <aside class="sidebar" id="admin-sidebar">
-                <ul>
-                    <li data-tab="users" class="active">👥 학생/수강권 관리</li>
-                    <li data-tab="homework">📝 숙제 배포/검사</li>
-                    <li data-tab="lectures">📖 강의/진도 관리</li>
-                </ul>
-            </aside>
-            <main class="admin-content" id="admin-dash-content"></main>
-        </div>
+        <main class="admin-main" id="admin-dash-content"></main>
     </section>
 
     <footer class="app-footer global-element">
-        <p>&copy; 2026 StudyCampus. All rights reserved.</p>
+        <p><strong>STUDYCAMPUS | 대표: 이지호</strong><br><span style="color:var(--text-muted); font-size:12px;">이용약관 | 개인정보처리방침 | 환불규정</span></p>
     </footer>
+
+    <a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" class="kakao-fab">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.535 1.451 4.793 3.693 6.223-.23.864-1.123 3.23-1.168 3.424-.055.234.086.338.256.224.218-.146 3.447-2.316 4.8-3.234.782.203 1.597.311 2.42.311 5.523 0 10-3.582 10-8s-4.477-8-10-8z" fill="#000000"/></svg>
+        카톡 상담
+    </a>
     
     <script type="module" src="script.js"></script>
 </body>
