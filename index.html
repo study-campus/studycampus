@@ -9,119 +9,83 @@
 <body>
     <div id="toast-container"></div>
 
-    <header class="navbar global-element" id="main-nav">
-        <div class="logo" data-action="nav" data-target="landing">StudyCampus</div>
-        <nav><ul class="nav-links" id="nav-links"></ul></nav>
+    <header class="app-header global-element" id="main-nav">
+        <div class="logo" data-action="nav" data-target="landing">
+            <span class="logo-icon">📘</span> StudyCampus
+        </div>
         <div class="nav-actions">
-            <span id="user-profile-tag" class="profile-tag hidden"></span>
-            <button id="auth-action-btn" class="btn-primary" data-action="auth-toggle">로그인</button>
+            <span id="user-profile-tag" class="hidden"></span>
+            <button id="auth-action-btn" class="btn-text" data-action="auth-toggle">로그인</button>
         </div>
     </header>
 
-    <main class="container global-element">
+    <main class="global-element" style="flex:1;">
         <section id="view-landing" class="view">
-            <div class="hero">
-                <h1>스스로 학습하고 완성하는 미래<br><span class="highlight">StudyCampus</span></h1>
-                <p>체계적인 주간 관제와 맞춤형 강의 자료를 통해 완벽한 자기주도학습을 경험하세요.</p>
-                <button class="btn-lg" data-action="nav" data-target="auth">지금 시작하기</button>
+            <div class="blue-gradient-hero">
+                <p class="subtitle">ENGLISH LIBERATION FORMULA</p>
+                <h1>자기주도학습으로<br>완성되는<br>온라인 스터디</h1>
+                <p class="desc">담임 선생님 1:1 관리 · 매주 피드백</p>
+                <div class="stats-row">
+                    <div><strong>10명</strong><br><span>돌파 수강</span></div>
+                    <div><strong>-등급</strong><br><span>평균 상승</span></div>
+                    <div><strong>-점</strong><br><span> -등급</span></div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-white" data-action="nav" data-target="auth">무료 상담 신청</button>
+                    <button class="btn-white-outline" data-action="nav" data-target="auth">입학 테스트</button>
+                </div>
             </div>
-            <div class="features-grid">
-                <div class="feature-card"><h3>🎯 맞춤형 주간 관제</h3><p>전문 관리자가 매주 학습 방향성을 완벽하게 제어하고 모니터링합니다.</p></div>
-                <div class="feature-card"><h3>📚 프리미엄 자료실</h3><p>핵심 요약 노트와 최신 인터넷 강의를 시청할 수 있습니다.</p></div>
-                <div class="feature-card"><h3>💬 상호 소통 커뮤니티</h3><p>질의응답 및 학습 인증을 통해 함께 성장하는 커뮤니티를 제공합니다.</p></div>
+            <div class="feature-boxes">
+                <div class="f-box"><strong>왜 스터디캠퍼스?</strong><p>완벽한 자기주도학습</p></div>
+                <div class="f-box"><strong>노력으로 인한 결과</strong><p>1등급의 비결</p></div>
             </div>
         </section>
 
-        <section id="view-auth" class="view hidden full-page-auth">
-            <div class="auth-box">
-                <h2 class="auth-title">StudyCampus 시작하기</h2>
+        <section id="view-auth" class="view hidden auth-container">
+            <div class="auth-card">
+                <h2 style="margin-bottom:20px;">StudyCampus 시작하기</h2>
                 <div class="auth-tabs">
-                    <button id="tab-login" class="auth-tab active" data-auth-mode="login">로그인</button>
-                    <button id="tab-register" class="auth-tab" data-auth-mode="register">회원가입</button>
+                    <button id="tab-login" class="active" data-auth-mode="login">로그인</button>
+                    <button id="tab-register" data-auth-mode="register">회원가입</button>
                 </div>
                 <form id="auth-form">
-                    <div class="form-group"><label>아이디</label><input type="text" id="auth-id" class="modern-input" required placeholder="아이디를 입력하세요"></div>
-                    <div class="form-group"><label>비밀번호</label><input type="password" id="auth-pw" class="modern-input" required placeholder="비밀번호를 입력하세요"></div>
-                    <div class="form-group hidden" id="reg-name-group"><label>이름</label><input type="text" id="auth-name" class="modern-input" placeholder="실명을 입력하세요"></div>
-                    <button type="submit" class="btn-block auth-submit-btn btn-primary" id="auth-submit-btn">로그인</button>
+                    <input type="text" id="auth-id" class="input-field" required placeholder="아이디">
+                    <input type="password" id="auth-pw" class="input-field" required placeholder="비밀번호">
+                    <input type="text" id="auth-name" class="input-field hidden" placeholder="이름">
+                    <button type="submit" class="btn-primary" id="auth-submit-btn">로그인</button>
                 </form>
             </div>
         </section>
     </main>
 
-    <section id="view-student" class="view hidden app-layout">
-        <aside class="app-sidebar" id="student-sidebar">
-            <div class="sidebar-header">
-                <div class="logo">StudyCampus</div>
-                <span class="badge badge-success" style="margin-left:8px;">학생</span>
-            </div>
-            <div class="sidebar-profile">
-                <div class="avatar">👨‍🎓</div>
-                <div class="info">
-                    <div class="name" id="student-profile-name">학생명</div>
-                    <div class="role">나의 대시보드</div>
-                </div>
-            </div>
-            <ul class="sidebar-nav">
-                <li data-tab="notices" class="active"><span class="icon">📢</span> 공지사항</li>
-                <li data-tab="weekly"><span class="icon">📊</span> 주간 관제</li>
-                <li data-tab="lectures"><span class="icon">📖</span> 강의/자료</li>
-                <li data-tab="community"><span class="icon">💭</span> 커뮤니티</li>
-                <li data-tab="payments"><span class="icon">💳</span> 결제/승인</li>
-            </ul>
-            <div class="sidebar-footer">
-                <button class="btn-outline btn-block" data-action="auth-toggle">로그아웃</button>
-            </div>
-        </aside>
-        <main class="app-main">
-            <header class="app-header"><h2 id="student-page-title" class="page-title">📢 공지사항</h2></header>
-            <div class="app-content" id="student-dash-content"></div>
-        </main>
+    <section id="view-student" class="view hidden app-wrapper">
+        <header class="app-header">
+            <div class="logo">StudyCampus</div>
+            <div class="nav-actions"><button class="btn-text" data-action="auth-toggle">로그아웃</button></div>
+        </header>
+        <div class="app-body" id="student-dash-content"></div>
     </section>
 
-    <section id="view-admin" class="view hidden app-layout">
-        <aside class="app-sidebar" id="admin-sidebar">
-            <div class="sidebar-header">
-                <div class="logo">StudyCampus</div>
-                <span class="badge badge-admin">Admin</span>
-            </div>
-            <div class="sidebar-profile">
-                <div class="avatar">👑</div>
-                <div class="info">
-                    <div class="name" id="admin-profile-name">관리자</div>
-                    <div class="role">통합 관제 센터</div>
-                </div>
-            </div>
-            <ul class="sidebar-nav">
-                <li data-tab="users" class="active"><span class="icon">👥</span> 학생 관리</li>
-                <li data-tab="notices"><span class="icon">📢</span> 공지 배포</li>
-                <li data-tab="weekly"><span class="icon">📈</span> 주간 관제</li>
-                <li data-tab="lectures"><span class="icon">📁</span> 강의 업로드</li>
-                <li data-tab="community"><span class="icon">💬</span> 커뮤니티 관리</li>
-                <li data-tab="payments"><span class="icon">💰</span> 결제 승인</li>
-            </ul>
-            <div class="sidebar-footer">
-                <button class="btn-outline btn-block" data-action="auth-toggle">로그아웃</button>
-            </div>
-        </aside>
-        <main class="app-main">
-            <header class="app-header"><h2 id="admin-page-title" class="page-title">👥 학생 회원 관리</h2></header>
-            <div class="app-content" id="admin-dash-content"></div>
-        </main>
-    </section>
-
-    <footer class="footer global-element" id="main-footer">
-        <div class="footer-content">
-            <h4>StudyCampus</h4>
-            <p>대표자: 이지호 | 고객센터: 카카오톡 채널 | 이메일: -</p>
-            <p class="copyright">&copy; 2026 StudyCampus. Powered by Firebase Realtime DB v12.</p>
+    <section id="view-admin" class="view hidden app-wrapper">
+        <header class="app-header">
+            <div class="logo">Admin Center</div>
+            <div class="nav-actions"><button class="btn-text" data-action="auth-toggle">로그아웃</button></div>
+        </header>
+        <div class="app-sidebar-layout">
+            <aside class="sidebar" id="admin-sidebar">
+                <ul>
+                    <li data-tab="users" class="active">👥 학생/수강권 관리</li>
+                    <li data-tab="homework">📝 숙제 배포/검사</li>
+                    <li data-tab="lectures">📖 강의/진도 관리</li>
+                </ul>
+            </aside>
+            <main class="admin-content" id="admin-dash-content"></main>
         </div>
-    </footer>
+    </section>
 
-    <a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" class="kakao-fab" id="kakao-fab">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.535 1.451 4.793 3.693 6.223-.23.864-1.123 3.23-1.168 3.424-.055.234.086.338.256.224.218-.146 3.447-2.316 4.8-3.234.782.203 1.597.311 2.42.311 5.523 0 10-3.582 10-8s-4.477-8-10-8z" fill="#000000"/></svg>
-        카톡 상담
-    </a>
+    <footer class="app-footer global-element">
+        <p>&copy; 2026 StudyCampus. All rights reserved.</p>
+    </footer>
     
     <script type="module" src="script.js"></script>
 </body>
