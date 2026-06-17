@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyCampus | 자기주도학습 No.1 플랫폼</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo" onclick="showView('landing')">StudyCampus</div>
+        <nav>
+            <ul class="nav-links" id="nav-links">
+                </ul>
+        </nav>
+        <div class="nav-actions">
+            <button id="theme-toggle" class="btn-secondary">테마 변경</button>
+            <span id="user-profile-tag" class="profile-tag hidden"></span>
+            <button id="auth-action-btn" class="btn-primary" onclick="handleAuthAction()">로그인</button>
+        </div>
+    </header>
+
+    <main class="container">
+        
+        <section id="view-landing" class="view">
+            <div class="hero">
+                <h1>스스로 학습하고 완성하는 미래<br><span class="highlight">StudyCampus</span></h1>
+                <p>체계적인 주간 관제와 맞춤형 강의 자료를 통해 완벽한 자기주도학습을 경험하세요.</p>
+                <button class="btn-lg" onclick="showView('auth')">지금 시작하기</button>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <h3>🎯 맞춤형 주간 관제</h3>
+                    <p>전문 관리자가 매주 학습 방향성을 완벽하게 제어하고 모니터링합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>📚 프리미엄 자료실</h3>
+                    <p>핵심 요약 노트와 최신 인터넷 강의를 언제 어디서나 시청할 수 있습니다.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>💬 상호 소통 커뮤니티</h3>
+                    <p>질의응답 및 학습 인증을 통해 함께 성장하는 커뮤니티를 제공합니다.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-auth" class="view hidden">
+            <div class="auth-box">
+                <div class="auth-tabs">
+                    <button id="tab-login" class="auth-tab active" onclick="toggleAuthMode('login')">로그인</button>
+                    <button id="tab-register" class="auth-tab" onclick="toggleAuthMode('register')">회원가입</button>
+                </div>
+                
+                <form id="auth-form" onsubmit="processAuth(event)">
+                    <div class="form-group">
+                        <label for="auth-id">아이디</label>
+                        <input type="text" id="auth-id" required placeholder="아이디를 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label for="auth-pw">비밀번호</label>
+                        <input type="password" id="auth-pw" required placeholder="비밀번호를 입력하세요">
+                    </div>
+                    <div class="form-group hidden" id="reg-name-group">
+                        <label for="auth-name">이름</label>
+                        <input type="text" id="auth-name" placeholder="실명을 입력하세요">
+                    </div>
+                    <button type="submit" class="btn-block" id="auth-submit-btn">로그인</button>
+                </form>
+                <div class="admin-hint">💡 관리자 테스트 계정<br>ID: studycampus / PW: studycampus26</div>
+            </div>
+        </section>
+
+        <section id="view-student" class="view hidden">
+            <div class="dashboard-layout">
+                <aside class="sidebar">
+                    <h2>학생 공간</h2>
+                    <ul>
+                        <li onclick="switchDashboardTab('student', 'notices')">📢 공지사항</li>
+                        <li onclick="switchDashboardTab('student', 'weekly')">📊 나의 주간 관제</li>
+                        <li onclick="switchDashboardTab('student', 'lectures')">📖 강의 및 자료</li>
+                        <li onclick="switchDashboardTab('student', 'community')">💭 커뮤니티</li>
+                        <li onclick="switchDashboardTab('student', 'payments')">💳 결제/승인 요청</li>
+                    </ul>
+                </aside>
+                <section class="dash-content" id="student-dash-content">
+                    </section>
+            </div>
+        </section>
+
+        <section id="view-admin" class="view hidden">
+            <div class="dashboard-layout">
+                <aside class="sidebar admin-sidebar">
+                    <h2>관리자 패널</h2>
+                    <ul>
+                        <li onclick="switchDashboardTab('admin', 'users')">👥 학생 회원 관리</li>
+                        <li onclick="switchDashboardTab('admin', 'notices')">📢 공지 배포</li>
+                        <li onclick="switchDashboardTab('admin', 'weekly')">📈 주간 관제 배포</li>
+                        <li onclick="switchDashboardTab('admin', 'lectures')">📁 자료/강의 업로드</li>
+                        <li onclick="switchDashboardTab('admin', 'community')">💬 커뮤니티 통합 관리</li>
+                        <li onclick="switchDashboardTab('admin', 'payments')">💰 결제 승인 및 연동</li>
+                        <li onclick="switchDashboardTab('admin', 'system')">⚙️ 백업 및 시스템</li>
+                    </ul>
+                </aside>
+                <section class="dash-content" id="admin-dash-content">
+                    </section>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <h4>StudyCampus (스터디캠퍼스 주식회사)</h4>
+            <p>대표자: 홍길동 | 사업자등록번호: 123-45-67890 | 통신판매업신고: 제 2026-고양덕양-0000호</p>
+            <p>주소: 경기도 고양시 덕양구 권율대로 | 고객센터: 1588-0000 | 이메일: support@studycampus.edu</p>
+            <p class="copyright">&copy; 2026 StudyCampus. All rights reserved. Powered by Auto-Save System.</p>
+        </div>
+    </footer>
+    
+    <script src="script.js"></script>
+</body>
+</html>
