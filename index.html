@@ -7,27 +7,23 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 상단 네비게이션 바 (테마 변경 버튼 삭제) -->
-    <header class="navbar">
-        <div class="logo" onclick="showView('landing')">StudyCampus</div>
-        <nav>
-            <ul class="nav-links" id="nav-links">
-                <!-- 자바스크립트에서 로그인 상태에 따라 동적 렌더링 -->
-            </ul>
-        </nav>
+    <div id="toast-container"></div>
+
+    <header class="navbar" id="main-nav">
+        <div class="logo" data-action="nav" data-target="landing">StudyCampus</div>
+        <nav><ul class="nav-links" id="nav-links"></ul></nav>
         <div class="nav-actions">
             <span id="user-profile-tag" class="profile-tag hidden"></span>
-            <button id="auth-action-btn" class="btn-primary" onclick="handleAuthAction()">로그인</button>
+            <button id="auth-action-btn" class="btn-primary" data-action="auth-toggle">로그인</button>
         </div>
     </header>
 
     <main class="container">
-        <!-- [1] 메인 랜딩 페이지 -->
         <section id="view-landing" class="view">
             <div class="hero">
                 <h1>스스로 학습하고 완성하는 미래<br><span class="highlight">StudyCampus</span></h1>
                 <p>체계적인 주간 관제와 맞춤형 강의 자료를 통해 완벽한 자기주도학습을 경험하세요.</p>
-                <button class="btn-lg" onclick="showView('auth')">지금 시작하기</button>
+                <button class="btn-lg" data-action="nav" data-target="auth">지금 시작하기</button>
             </div>
             <div class="features-grid">
                 <div class="feature-card">
@@ -36,7 +32,7 @@
                 </div>
                 <div class="feature-card">
                     <h3>📚 프리미엄 자료실</h3>
-                    <p>핵심 요약 노트와 최신 인터넷 강의를 언제 어디서나 시청할 수 있습니다.</p>
+                    <p>핵심 요약 노트와 최신 인터넷 강의를 시청할 수 있습니다.</p>
                 </div>
                 <div class="feature-card">
                     <h3>💬 상호 소통 커뮤니티</h3>
@@ -45,82 +41,69 @@
             </div>
         </section>
 
-        <!-- [2] 인증 페이지 (관리자 힌트 문구 삭제) -->
-        <section id="view-auth" class="view hidden">
+        <section id="view-auth" class="view hidden full-page-auth">
             <div class="auth-box">
+                <h2 class="auth-title">StudyCampus 시작하기</h2>
                 <div class="auth-tabs">
-                    <button id="tab-login" class="auth-tab active" onclick="toggleAuthMode('login')">로그인</button>
-                    <button id="tab-register" class="auth-tab" onclick="toggleAuthMode('register')">회원가입</button>
+                    <button id="tab-login" class="auth-tab active" data-auth-mode="login">로그인</button>
+                    <button id="tab-register" class="auth-tab" data-auth-mode="register">회원가입</button>
                 </div>
-                
-                <form id="auth-form" onsubmit="processAuth(event)">
-                    <div class="form-group">
-                        <label for="auth-id">아이디</label>
-                        <input type="text" id="auth-id" required placeholder="아이디를 입력하세요">
-                    </div>
-                    <div class="form-group">
-                        <label for="auth-pw">비밀번호</label>
-                        <input type="password" id="auth-pw" required placeholder="비밀번호를 입력하세요">
-                    </div>
-                    <div class="form-group hidden" id="reg-name-group">
-                        <label for="auth-name">이름</label>
-                        <input type="text" id="auth-name" placeholder="실명을 입력하세요">
-                    </div>
-                    <button type="submit" class="btn-block" id="auth-submit-btn">로그인</button>
+                <form id="auth-form">
+                    <div class="form-group"><label>아이디</label><input type="text" id="auth-id" required placeholder="아이디를 입력하세요"></div>
+                    <div class="form-group"><label>비밀번호</label><input type="password" id="auth-pw" required placeholder="비밀번호를 입력하세요"></div>
+                    <div class="form-group hidden" id="reg-name-group"><label>이름</label><input type="text" id="auth-name" placeholder="실명을 입력하세요"></div>
+                    <button type="submit" class="btn-block auth-submit-btn" id="auth-submit-btn">로그인</button>
                 </form>
             </div>
         </section>
 
-        <!-- [3] 학생용 대시보드 페이지 -->
         <section id="view-student" class="view hidden">
             <div class="dashboard-layout">
-                <aside class="sidebar">
+                <aside class="sidebar" id="student-sidebar">
                     <h2>학생 공간</h2>
                     <ul>
-                        <li onclick="switchDashboardTab('student', 'notices')">📢 공지사항</li>
-                        <li onclick="switchDashboardTab('student', 'weekly')">📊 나의 주간 관제</li>
-                        <li onclick="switchDashboardTab('student', 'lectures')">📖 강의 및 자료</li>
-                        <li onclick="switchDashboardTab('student', 'community')">💭 커뮤니티</li>
-                        <li onclick="switchDashboardTab('student', 'payments')">💳 결제/승인 요청</li>
+                        <li data-tab="notices" class="active">📢 공지사항</li>
+                        <li data-tab="weekly">📊 나의 주간 관제</li>
+                        <li data-tab="lectures">📖 강의 및 자료</li>
+                        <li data-tab="community">💭 커뮤니티</li>
+                        <li data-tab="payments">💳 결제/승인 요청</li>
                     </ul>
                 </aside>
-                <section class="dash-content" id="student-dash-content">
-                    <!-- 하위 탭 렌더링 영역 -->
-                </section>
+                <section class="dash-content" id="student-dash-content"></section>
             </div>
         </section>
 
-        <!-- [4] 관리자용 대시보드 페이지 -->
         <section id="view-admin" class="view hidden">
             <div class="dashboard-layout">
-                <aside class="sidebar admin-sidebar">
+                <aside class="sidebar admin-sidebar" id="admin-sidebar">
                     <h2>관리자 패널</h2>
                     <ul>
-                        <li onclick="switchDashboardTab('admin', 'users')">👥 학생 회원 관리</li>
-                        <li onclick="switchDashboardTab('admin', 'notices')">📢 공지 배포</li>
-                        <li onclick="switchDashboardTab('admin', 'weekly')">📈 주간 관제 배포</li>
-                        <li onclick="switchDashboardTab('admin', 'lectures')">📁 자료/강의 업로드</li>
-                        <li onclick="switchDashboardTab('admin', 'community')">💬 커뮤니티 통합 관리</li>
-                        <li onclick="switchDashboardTab('admin', 'payments')">💰 결제 승인 및 연동</li>
-                        <li onclick="switchDashboardTab('admin', 'system')">⚙️ 백업 및 시스템</li>
+                        <li data-tab="users" class="active">👥 학생 회원 관리</li>
+                        <li data-tab="notices">📢 공지 배포</li>
+                        <li data-tab="weekly">📈 주간 관제 배포</li>
+                        <li data-tab="lectures">📁 자료/강의 업로드</li>
+                        <li data-tab="community">💬 커뮤니티 통합 관리</li>
+                        <li data-tab="payments">💰 결제 승인 및 연동</li>
                     </ul>
                 </aside>
-                <section class="dash-content" id="admin-dash-content">
-                    <!-- 하위 탭 렌더링 영역 -->
-                </section>
+                <section class="dash-content" id="admin-dash-content"></section>
             </div>
         </section>
     </main>
 
-    <footer class="footer">
+    <footer class="footer" id="main-footer">
         <div class="footer-content">
             <h4>StudyCampus</h4>
-            <p>대표자: 이지호 | 사업자등록번호: - | 통신판매업신고: -</p>
-            <p>주소: - | 고객센터: - | 이메일: -</p>
-            <p class="copyright">&copy; 2026 StudyCampus. All rights reserved. Powered by Auto-Save System.</p>
+            <p>대표자: 이지호 | 고객센터: 카카오톡 채널 | 이메일: - </p>
+            <p class="copyright">&copy; 2026 StudyCampus. Powered by Firebase Realtime DB v12.</p>
         </div>
     </footer>
+
+    <a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" class="kakao-fab" id="kakao-fab">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.535 1.451 4.793 3.693 6.223-.23.864-1.123 3.23-1.168 3.424-.055.234.086.338.256.224.218-.146 3.447-2.316 4.8-3.234.782.203 1.597.311 2.42.311 5.523 0 10-3.582 10-8s-4.477-8-10-8z" fill="#000000"/></svg>
+        카톡 상담
+    </a>
     
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
