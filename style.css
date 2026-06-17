@@ -1,4 +1,3 @@
-/* 기본 변수 설정 (라이트 모드 기준) */
 :root {
     --bg-main: #f8f9fa;
     --bg-card: #ffffff;
@@ -12,7 +11,7 @@
     --border: #e5e7eb;
 }
 
-/* 시스템 다크 모드 감지 (운영체제 설정에 따라 자동 반영) */
+/* 시스템 다크 모드 100% 자동 감지 */
 @media (prefers-color-scheme: dark) {
     :root {
         --bg-main: #0f172a;
@@ -24,7 +23,7 @@
     }
 }
 
-/* 수동 테마 변경을 위한 명시적 클래스 */
+/* 자바스크립트 강제 제어용 (실시간 시스템 변경 대응) */
 body.light-theme {
     --bg-main: #f8f9fa;
     --bg-card: #ffffff;
@@ -43,7 +42,6 @@ body.dark-theme {
     --border: #334155;
 }
 
-/* 전체 초기화 및 폰트 설정 */
 * {
     margin: 0;
     padding: 0;
@@ -68,7 +66,6 @@ body {
     padding: 2rem 1rem;
 }
 
-/* 상단 네비게이션 */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -109,7 +106,6 @@ body {
     gap: 1rem;
 }
 
-/* 버튼 스타일 */
 button {
     padding: 0.5rem 1rem;
     border-radius: 6px;
@@ -121,12 +117,10 @@ button {
 
 .btn-primary { background-color: var(--primary); color: white; }
 .btn-primary:hover { background-color: var(--primary-hover); }
-.btn-secondary { background-color: var(--border); color: var(--text-primary); }
 .btn-danger { background-color: var(--danger); color: white; }
 .btn-block { width: 100%; padding: 0.75rem; font-size: 1rem; background-color: var(--primary); color: white; }
 .btn-lg { padding: 0.75rem 2rem; font-size: 1.125rem; background-color: var(--primary); color: white; border-radius: 8px; }
 
-/* 메인 랜딩 영역 */
 .hero {
     text-align: center;
     padding: 5rem 1rem;
@@ -162,7 +156,6 @@ button {
 
 .feature-card h3 { margin-bottom: 0.5rem; }
 
-/* 인증 창 (로그인 및 회원가입) */
 .auth-box {
     max-width: 400px;
     margin: 4rem auto;
@@ -212,17 +205,6 @@ button {
     color: var(--text-primary);
 }
 
-.admin-hint {
-    margin-top: 1.5rem;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    background-color: var(--bg-main);
-    padding: 0.75rem;
-    border-radius: 6px;
-    text-align: center;
-}
-
-/* 대시보드 레이아웃 */
 .dashboard-layout {
     display: grid;
     grid-template-columns: 240px 1fr;
@@ -259,7 +241,6 @@ button {
     min-height: 500px;
 }
 
-/* 데이터 테이블, 상태 및 공통 유틸리티 */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -290,12 +271,9 @@ th { background-color: var(--bg-main); font-weight: 600; }
 
 .hidden { display: none !important; }
 .profile-tag { background-color: var(--accent); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold;}
-
-/* 결제 상태 색상 클래스 (VS Code 에러 방지용) */
 .status-approved { color: var(--accent); font-weight: bold; }
 .status-pending { color: var(--danger); font-weight: bold; }
 
-/* 하단 푸터 영역 */
 .footer {
     background-color: var(--bg-card);
     border-top: 1px solid var(--border);
