@@ -6,7 +6,6 @@
     --text-main: #f8fafc; --text-muted: #94a3b8; --border: #334155;
 }
 
-/* 🔥 모바일에서 글자가 깨지지 않도록 word-break: keep-all 추가 */
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Pretendard', -apple-system, sans-serif; word-break: keep-all; }
 body { background: var(--bg-dark); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden;}
 .hidden { display: none !important; }
@@ -59,7 +58,6 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .auth-header { text-align: center; margin-bottom: 30px; }
 .auth-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: white; padding: 16px; border-radius: 12px; margin-bottom: 15px; font-size: 1rem; outline: none; transition: 0.2s; }
 .auth-input:focus { border-color: var(--primary); }
-.auth-submit { width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 12px; margin-top: 10px; }
 
 /* 학생 모바일 앱 UI */
 .stu-wrapper { flex: 1; display: flex; flex-direction: column; width: 100%; }
@@ -75,7 +73,7 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .stu-nav-item.active .stu-nav-icon { filter: none; }
 
 .stu-banner-top { background: #0f172a; color: white; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-.stu-banner-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); border-radius: 16px; padding: 24px; color: white; margin-bottom: 20px; }
+.stu-banner-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); border-radius: 16px; padding: 24px; color: white; margin-bottom: 20px; overflow:hidden; position:relative;}
 .stu-banner-green { background: #10b981; border-radius: 16px; padding: 20px; color: white; margin-bottom: 20px; font-size: 20px; font-weight: 800; }
 .stu-banner-mint { background: #14b8a6; border-radius: 16px; padding: 20px; color: white; margin-bottom: 20px; font-size: 20px; font-weight: 800; }
 .stu-card { background: var(--bg-card); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); transition: 0.2s;}
@@ -90,11 +88,6 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .notif-header { background: #0f172a; padding: 15px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #334155; }
 .notif-list { max-height: 300px; overflow-y: auto; }
 .notif-item { padding: 15px; border-bottom: 1px solid #334155; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: 0.2s; }
-
-/* 모달 시스템 */
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100000; backdrop-filter: blur(4px); }
-.modal-content { background: var(--bg-card); padding: 30px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-.modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main); }
 
 /* 자동 팝업 모달 */
 .auto-popup-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.65); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
@@ -132,7 +125,12 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .admin-card { background: #1e293b; border-radius: 16px; border: 1px solid #334155; padding: 25px; margin-bottom: 20px; }
 .admin-table { width: 100%; border-collapse: collapse; }
 .admin-table th, .admin-table td { padding: 12px; border-bottom: 1px solid var(--border); text-align: left; }
-.admin-input { width: 100%; background: #0f172a; border: 1px solid #334155; color: white; padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; outline: none; }
+.admin-input { width: 100%; background: #0f172a; border: 1px solid #334155; color: white; padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; outline: none; transition: 0.2s;}
+
+/* 시스템 모달 (관리자 편집용 등) */
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100000; backdrop-filter: blur(4px); }
+.modal-content { background: var(--bg-card); padding: 30px; border-radius: 16px; border: 1px solid var(--border); width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+.modal-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; color: var(--text-main); }
 
 /* 카카오톡 및 토스트 */
 .kakao-fab { position: fixed; bottom: 90px; right: 20px; background-color: #FEE500; color: #000; padding: 12px 20px; border-radius: 30px; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 16px rgba(0,0,0,0.2); z-index: 9999; text-decoration: none;}
