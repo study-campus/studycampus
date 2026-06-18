@@ -47,19 +47,11 @@
                 <h2 class="section-title" id="ld-sec-title"></h2>
                 <div class="feature-cards">
                     <div class="f-card">
-                        <div>
-                            <span id="ld-f1-b"></span>
-                            <h3 id="ld-f1-t"></h3>
-                            <p id="ld-f1-d"></p>
-                        </div>
+                        <div><span id="ld-f1-b"></span><h3 id="ld-f1-t"></h3><p id="ld-f1-d"></p></div>
                         <div class="f-emoji" id="ld-f1-e"></div>
                     </div>
                     <div class="f-card">
-                        <div>
-                            <span id="ld-f2-b"></span>
-                            <h3 id="ld-f2-t"></h3>
-                            <p id="ld-f2-d"></p>
-                        </div>
+                        <div><span id="ld-f2-b"></span><h3 id="ld-f2-t"></h3><p id="ld-f2-d"></p></div>
                         <div class="f-emoji" id="ld-f2-e"></div>
                     </div>
                 </div>
@@ -83,9 +75,7 @@
                     <input type="password" id="login-pw" class="auth-input" required placeholder="비밀번호">
                     <button type="submit" class="btn-primary auth-submit">로그인</button>
                 </form>
-                <div class="auth-footer">
-                    <span data-action="switch-auth" data-mode="register" style="cursor:pointer; color:#60a5fa;">회원가입</span> &nbsp;|&nbsp; <span style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span>
-                </div>
+                <div class="auth-footer"><span data-action="switch-auth" data-mode="register" style="cursor:pointer; color:#60a5fa;">회원가입</span> &nbsp;|&nbsp; <span style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span></div>
             </div>
 
             <div class="auth-modal hidden" id="modal-register">
@@ -98,21 +88,14 @@
                     <input type="text" id="reg-name" class="auth-input" required placeholder="실명">
                     <input type="text" id="reg-id" class="auth-input" required placeholder="아이디">
                     <input type="tel" id="reg-phone" class="auth-input" required placeholder="연락처 (010-0000-0000)">
-                    <div style="display:flex; gap:10px;">
-                        <input type="password" id="reg-pw" class="auth-input" required placeholder="비밀번호">
-                        <input type="password" id="reg-pw-confirm" class="auth-input" required placeholder="비밀번호 확인">
-                    </div>
+                    <div style="display:flex; gap:10px;"><input type="password" id="reg-pw" class="auth-input" required placeholder="비밀번호"><input type="password" id="reg-pw-confirm" class="auth-input" required placeholder="비밀번호 확인"></div>
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="reg-school" class="auth-input" placeholder="학교명">
-                        <select id="reg-grade" class="auth-input" style="color:white; font-weight:bold;">
-                            <option value="고1">고1</option><option value="고2" selected>고2</option><option value="고3">고3</option>
-                        </select>
+                        <select id="reg-grade" class="auth-input" style="color:white; font-weight:bold;"><option value="고1">고1</option><option value="고2" selected>고2</option><option value="고3">고3</option></select>
                     </div>
                     <button type="submit" class="btn-primary auth-submit" style="margin-top:10px;">가입 완료</button>
                 </form>
-                <div class="auth-footer" style="margin-top:15px;">
-                    <span data-action="switch-auth" data-mode="login" style="cursor:pointer; color:var(--text-muted);">&larr; 뒤로 가기</span>
-                </div>
+                <div class="auth-footer" style="margin-top:15px;"><span data-action="switch-auth" data-mode="login" style="cursor:pointer; color:var(--text-muted);">&larr; 뒤로 가기</span></div>
             </div>
         </section>
     </main>
@@ -120,9 +103,12 @@
     <section id="view-student" class="view hidden stu-wrapper">
         <header class="stu-header">
             <div class="logo-font" style="font-size:1.5rem; color:#60a5fa;" data-action="switch-student-tab" data-tab="home">studycampus</div>
-            <div class="stu-header-right">
-                <span style="font-size:20px; cursor:pointer;">🔔</span>
+            <div class="stu-header-right" style="position:relative;">
+                <span style="font-size:20px; cursor:pointer; position:relative;" data-action="toggle-notif">
+                    🔔<span id="notif-badge" class="hidden" style="position:absolute; top:-2px; right:-2px; background:red; width:8px; height:8px; border-radius:50%;"></span>
+                </span>
                 <button class="stu-btn-outline" data-action="auth-toggle">로그아웃</button>
+                <div id="notif-dropdown" class="notif-box hidden"><div class="notif-header">최근 알림</div><div id="notif-list" class="notif-list"></div></div>
             </div>
         </header>
         <main class="stu-main" id="student-dash-content"></main>
@@ -135,6 +121,38 @@
             <div class="stu-nav-item" data-action="switch-student-tab" data-tab="community"><span class="stu-nav-icon">💬</span>소통</div>
             <div class="stu-nav-item" data-action="switch-student-tab" data-tab="mypage"><span class="stu-nav-icon">👤</span>MY</div>
         </nav>
+    </section>
+
+    <section id="view-payment" class="view hidden stu-wrapper" style="background:#0f172a;">
+        <header class="stu-header" style="justify-content:center; position:relative; background:#0f172a; border-bottom:1px solid #1e293b;">
+            <button class="stu-btn-outline" style="position:absolute; left:20px; border-color:#334155;" data-action="back-to-mypage">&larr; 뒤로가기</button>
+            <h2 style="font-size:1.1rem; font-weight:700; color:white;">수강권 결제 센터</h2>
+        </header>
+        <main class="stu-main">
+            <div class="stu-card" style="background:#1e293b;">
+                <h3 style="margin-bottom:20px; color:white; font-size:1.1rem;">💳 수강권 결제하기</h3>
+                <hr style="border:0; border-top:1px solid #334155; margin-bottom:20px;">
+                <h3 style="margin-bottom:15px; color:white; font-size:1.1rem; display:flex; align-items:center; gap:8px;">🏦 무통장 입금 안내</h3>
+                <div style="background:#2e3153; padding:18px; border-radius:8px; border:1px solid #4338ca; color:#a5b4fc; font-weight:700; font-size:1.05rem;">
+                    [하나은행] 342-910508-31507
+                </div>
+            </div>
+            <div class="stu-card" style="background:#1e293b;">
+                <h3 style="margin-bottom:20px; color:white; font-size:1.1rem;">입금 처리 요청하기</h3>
+                <form id="form-payment-request">
+                    <p style="font-size:13px; color:#94a3b8; margin-bottom:6px;">학생명</p>
+                    <input type="text" id="pay-req-name" class="auth-input" style="margin-bottom:20px; background:#0f172a; cursor:not-allowed;" readonly>
+                    
+                    <p style="font-size:13px; color:#94a3b8; margin-bottom:6px;">전화번호</p>
+                    <input type="tel" id="pay-req-phone" class="auth-input" style="margin-bottom:20px; background:#0f172a;" required placeholder="01012345678">
+                    
+                    <p style="font-size:13px; color:#94a3b8; margin-bottom:6px;">결제(입금) 증명 첨부사진</p>
+                    <input type="file" id="pay-req-file" class="auth-input" accept="image/*" required style="padding:12px; background:#0f172a; margin-bottom:25px;">
+                    
+                    <button type="submit" class="btn-primary btn-block" style="background:#4f46e5; border-radius:8px; font-size:1.1rem; padding:16px;">요청서 제출하기</button>
+                </form>
+            </div>
+        </main>
     </section>
 
     <section id="view-admin" class="view hidden admin-wrapper">
@@ -155,11 +173,23 @@
     <footer class="app-footer global-element">
         <p><strong>STUDYCAMPUS | 대표: 이지호</strong><br><span style="color:var(--text-muted); font-size:12px;">이용약관 | 개인정보처리방침 | 환불규정</span></p>
     </footer>
-
     <a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" class="kakao-fab">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.535 1.451 4.793 3.693 6.223-.23.864-1.123 3.23-1.168 3.424-.055.234.086.338.256.224.218-.146 3.447-2.316 4.8-3.234.782.203 1.597.311 2.42.311 5.523 0 10-3.582 10-8s-4.477-8-10-8z" fill="#000000"/></svg>
         카톡 상담
     </a>
+
+    <div id="modal-ai-report" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:500px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h2 class="modal-title" style="margin:0;">📝 AI 주간 분석 리포트</h2>
+                <button class="btn-text" style="font-size:24px; color:#64748b; padding:0;" data-action="close-ai-modal">×</button>
+            </div>
+            <p style="color:#94a3b8; font-size:13px; margin-bottom:15px;">해당 학생의 학습 내역을 바탕으로 AI가 리포트를 자동 분석합니다.</p>
+            <button class="btn-outline btn-block" style="margin-bottom:15px; color:#60a5fa; border-color:#60a5fa;" data-action="generate-ai-text">✨ AI 자동 작성하기 (클릭)</button>
+            <textarea id="ai-report-textarea" class="auth-input" style="height:200px; font-size:14px; line-height:1.6; resize:none;" placeholder="작성된 리포트가 이곳에 표시됩니다. 수정 후 발송할 수 있습니다."></textarea>
+            <button class="btn-primary btn-block" style="margin-top:10px;" data-action="send-ai-report">분석 리포트 발송하기</button>
+        </div>
+    </div>
     
     <script type="module" src="script.js"></script>
 </body>
