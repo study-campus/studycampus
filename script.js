@@ -42,6 +42,13 @@ const generateId = () => Date.now().toString(36) + Math.random().toString(36).su
 function getCurrentWeekString(d = new Date()) { return `${d.getMonth() + 1}월 ${Math.ceil((d.getDate() - 1 + new Date(d.getFullYear(), d.getMonth(), 1).getDay() + 1) / 7)}주차`; }
 function clearLectureTimer() { if(AppState.lectureTimer) { clearInterval(AppState.lectureTimer); AppState.lectureTimer = null; } }
 
+// 🔥 [핵심 추가] 학교 이름 자동 정규화 함수 ('~고' 입력 시 자동으로 '~고등학교'로 변경)
+function normalizeSchool(name) {
+    let s = name.trim();
+    if(s.endsWith('고')) s += '등학교';
+    return s;
+}
+
 // ------------------------- 파이어베이스 (실시간 동기화) -------------------------
 const dbRef = ref(db, 'studycampus_data');
 onValue(dbRef, (snapshot) => {
@@ -49,12 +56,10 @@ onValue(dbRef, (snapshot) => {
     if (serverData) AppState.data = serverData;
     else set(dbRef, AppState.data);
 
-    // 🔥 사용자가 텍스트 입력 중일 때는 화면 리렌더링을 차단하여 작성 글이 날아가지 않도록 보호
     const activeEl = document.activeElement;
     const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
     const isModalOpen = document.querySelector('.modal-overlay:not(.hidden)') !== null;
     
-    // 만약 사용자가 타이핑 중이 아니고 모달이 열려있지 않다면 화면 갱신
     if (!isTyping && !isModalOpen) {
         renderLandingPage();
         renderCurrentView();
@@ -73,7 +78,7 @@ function switchView(viewName) {
     const targetView = document.getElementById(`view-${viewName}`);
     if(targetView) targetView.classList.remove('hidden');
     
-    if (viewName === 'auth') switchAuthMode('login'); // 회원가입 후 로그인창으로 이동시 기본 탭
+    if (viewName === 'auth') switchAuthMode('login');
     const isAppView = viewName === 'student' || viewName === 'admin' || viewName === 'payment';
     document.querySelectorAll('.global-element').forEach(el => el.classList.toggle('hidden', isAppView));
     
@@ -116,7 +121,6 @@ function renderLandingPage() {
     document.getElementById('ld-bot-title').textContent = ld.botTitle;
 }
 
-// 결제 센터
 function renderPaymentCenter() {
     document.getElementById('pay-req-name').value = AppState.currentUser.name;
     const paySet = AppState.data.settings?.payment || { pgUrl: "", bankInfo: "[하나은행] 342-910508-31507", opt1: "1개월-10만", opt2: "", opt3: "", opt4: "" };
@@ -153,7 +157,7 @@ function renderStudentDashboard() {
 
     document.querySelectorAll('#student-bottom-nav .stu-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === studentTab));
     
-    // 알림
+    // 알림 리스트 렌더링
     const notifList = document.getElementById('notif-list');
     const myAlerts = (data.alerts || []).filter(a => a.studentId === me.id);
     const globalNotices = (data.notices || []).map(n => ({...n, type: 'notice'}));
@@ -207,7 +211,7 @@ function renderStudentDashboard() {
     }
     else if (studentTab === 'test') html += `<div class="stu-banner-green">나의 테스트실</div><div class="stu-empty">시험지 없음</div>`;
     else if (studentTab === 'lectures') {
-        html += `<div class="stu-banner-blue" style="font-size:22px; font-weight:800; display:flex; justify-content:space-between; align-items:center;">강의 수강 <button class="stu-btn-outline" style="border-color:white; color:white;" data-action="switch-student-tab" data-tab="home" ${!AppState.activeLecture ? 'class="hidden"' : ''}>뒤로</button></div>`;
+        html += `<div class="stu-banner-blue" style="font-size:22px; font-weight:800;">강의 수강</div>`;
         if (AppState.activeLecture) {
             const lec = AppState.activeLecture; const progress = me.lectureProgress?.[lec.id] || { percent: 0, done: false };
             html += `<div style="background:#000; border-radius:16px; aspect-ratio:16/9; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; margin-bottom:20px;">${progress.done ? '<div style="font-size:24px; color:#10b981; font-weight:bold;">✅ 시청 완료</div>' : `<div style="font-size:50px; cursor:pointer;" data-action="play-video">▶️</div>`}<div style="position:absolute; bottom:0; left:0; width:100%; height:6px; background:#333;"><div id="live-progress-bar" style="width:${progress.percent}%; height:100%; background:#3b82f6; transition:width 1s linear;"></div></div></div><div class="stu-card"><h3>${lec.title}</h3><p style="color:var(--text-muted); margin-top:5px;">90% 이상 시청 시 완료 처리 (현재 <span id="live-progress-text" style="color:#60a5fa; font-weight:bold;">${progress.percent}%</span>)</p></div><button class="btn-outline btn-block" style="border-color:#334155;" data-action="close-lecture">목록으로 돌아가기</button>`;
@@ -230,7 +234,6 @@ function renderStudentDashboard() {
             html += `</div>`;
         });
     }
-    // 🔥 [수정됨] 커뮤니티 작성자 수정 및 삭제 기능 보강
     else if (studentTab === 'community') {
         html += `<h2 style="font-size:24px; font-weight:800; color:#60a5fa; margin-bottom:20px;">소통 커뮤니티</h2><div class="stu-card" style="padding:10px;"><form id="form-community" style="display:flex; gap:10px;"><input type="text" id="comm-text" required placeholder="질문방 작성..." style="flex:1; background:transparent; border:1px solid #334155; border-radius:8px; padding:12px 15px; color:white; outline:none; font-size:14px;"><button type="submit" class="btn-primary" style="width:auto; padding:0 20px;">등록</button></form></div>`;
         if (!data.community || data.community.length === 0) html += `<div style="text-align:center; color:#64748b; margin-top:60px; font-size:14px; font-weight:600;">등록된 글이 없습니다.</div>`;
@@ -239,15 +242,8 @@ function renderStudentDashboard() {
         if (AppState.activePostId) {
             const post = data.community.find(c => c.id === AppState.activePostId);
             const isLiked = post.likes && post.likes.includes(me.id);
-            
-            // 🔥 글 작성자인 경우에만 수정/삭제 버튼 렌더링
             const isAuthor = (post.authorId === me.id) || (post.author === me.name);
-            const authorActionsHtml = isAuthor ? `
-                <div style="display:flex; gap:15px; margin-top:15px; border-top:1px solid var(--border); padding-top:15px;">
-                    <button class="btn-text" style="color:#60a5fa; padding:0; font-size:13px;" data-action="edit-post" data-id="${post.id}">📝 수정하기</button>
-                    <button class="btn-text" style="color:#ef4444; padding:0; font-size:13px;" data-action="delete-post" data-id="${post.id}">🗑️ 삭제하기</button>
-                </div>
-            ` : '';
+            const authorActionsHtml = isAuthor ? `<div style="display:flex; gap:15px; margin-top:15px; border-top:1px solid var(--border); padding-top:15px;"><button class="btn-text" style="color:#60a5fa; padding:0; font-size:13px;" data-action="edit-post" data-id="${post.id}">📝 수정하기</button><button class="btn-text" style="color:#ef4444; padding:0; font-size:13px;" data-action="delete-post" data-id="${post.id}">🗑️ 삭제하기</button></div>` : '';
 
             html += `<div class="modal-overlay"><div class="post-modal-content"><div class="post-header"><strong style="font-size:16px;">👤 ${post.author}</strong><button class="btn-text" data-action="close-post" style="font-size:24px; padding:0;">×</button></div><div class="post-body"><p style="font-size:16px; line-height:1.6; white-space:pre-wrap;">${post.content}</p>${authorActionsHtml}<button class="post-likes ${isLiked?'liked':''}" data-action="toggle-like" data-id="${post.id}">❤️ ${post.likes?post.likes.length:0} 공감하기</button></div><div class="comment-section"><div class="comment-list">${(!post.comments||post.comments.length===0)?'<p style="color:var(--text-muted); font-size:13px; text-align:center;">첫 댓글을 남겨보세요.</p>':post.comments.map(cm=>`<div class="comment-item"><strong>${cm.author}</strong> <span style="color:#64748b; font-size:11px; margin-left:8px;">${cm.date}</span><p style="margin-top:5px; font-size:14px;">${cm.content}</p></div>`).join('')}</div><form id="form-comment" style="display:flex; gap:10px;"><input type="text" id="comment-text" required placeholder="댓글 달기..." class="admin-input" style="margin:0;"><button type="submit" class="btn-primary" style="width:auto; padding:0 20px;">작성</button></form></div></div></div>`;
         }
@@ -282,9 +278,7 @@ function renderStudentDashboard() {
     container.innerHTML = html;
 }
 
-// =========================================================
-// [관리자 렌더링]
-// =========================================================
+// ------------------------- 관리자 렌더링 -------------------------
 function renderAdminDashboard() {
     const container = document.getElementById('admin-dash-content');
     const tab = AppState.adminTab;
@@ -300,6 +294,8 @@ function renderAdminDashboard() {
         if (AppState.adminModal && AppState.adminModal.isOpen) {
             const mode = AppState.adminModal.mode; 
             const stu = mode === 'edit' ? data.users.find(u => u.id === AppState.adminModal.studentId) : {};
+            
+            // 🔥 관리자 원생 수정 모달 학년 10티어 옵션 추가
             html += `
             <div class="modal-overlay">
                 <div class="modal-content">
@@ -309,8 +305,12 @@ function renderAdminDashboard() {
                         <input type="text" id="mod-stu-id" class="admin-input" placeholder="아이디" required value="${stu.id || ''}" ${mode === 'edit' ? 'disabled' : ''}>
                         <input type="password" id="mod-stu-pw" class="admin-input" placeholder="${mode === 'edit' ? '비밀번호 (변경 시에만 입력)' : '초기 비밀번호'}" ${mode === 'add' ? 'required' : ''}>
                         <div style="display:flex; gap:10px;">
-                            <input type="text" id="mod-stu-school" class="admin-input" placeholder="학교명" value="${stu.school || ''}">
-                            <input type="text" id="mod-stu-grade" class="admin-input" placeholder="학년 (예: 고2)" value="${stu.grade || ''}">
+                            <input type="text" id="mod-stu-school" class="admin-input" placeholder="학교명 (예: 대화고)" value="${stu.school || ''}">
+                            <select id="mod-stu-grade" class="admin-input" style="color:white;">
+                                <option value="중1" ${stu.grade==='중1'?'selected':''}>중1</option><option value="중2" ${stu.grade==='중2'?'selected':''}>중2</option><option value="중3" ${stu.grade==='중3'?'selected':''}>중3</option>
+                                <option value="고1" ${stu.grade==='고1'?'selected':''}>고1</option><option value="고2" ${stu.grade==='고2'?'selected':''}>고2</option><option value="고3" ${stu.grade==='고3'?'selected':''}>고3</option>
+                                <option value="대1" ${stu.grade==='대1'?'selected':''}>대1</option><option value="대2" ${stu.grade==='대2'?'selected':''}>대2</option><option value="대3" ${stu.grade==='대3'?'selected':''}>대3</option><option value="대4" ${stu.grade==='대4'?'selected':''}>대4</option>
+                            </select>
                         </div>
                         <div style="display:flex; gap:10px;">
                             <input type="date" id="mod-stu-expiry" class="admin-input" value="${stu.ticketExpiry || ''}" placeholder="수강 만료일">
@@ -367,13 +367,15 @@ function renderAdminDashboard() {
     }
     else if (tab === 'settings') {
         const pop = set.popup;
-        html += `<div class="admin-card" style="grid-column:1/-1;"><h2 style="margin-bottom:20px; color:#60a5fa;">📲 학생 시스템 설정</h2><form id="form-admin-system" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:40px;"><div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;"><h3 style="margin-bottom:15px; font-size:1rem; color:white;">학생 홈 상단 공지 배너</h3><input type="text" id="set-dash-banner" class="admin-input" value="${set.dashBanner}"></div><div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;"><div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3 style="font-size:1rem; color:white;">학생 로그인 자동 팝업창</h3><label><input type="checkbox" id="set-pop-active" ${pop.active?'checked':''}> 활성화</label></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;"><input type="text" id="set-pop-tag" class="admin-input" value="${pop.tag}"><input type="text" id="set-pop-title" class="admin-input" value="${pop.title}"><textarea id="set-pop-desc" class="admin-input" style="grid-column:1/-1; height:60px;">${pop.desc}</textarea><div style="background:#1e293b; padding:15px; border-radius:8px;"><input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}"></div><div style="background:#1e293b; padding:15px; border-radius:8px;"><input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}"></div><input type="text" id="set-pop-btn-url" class="admin-input" style="grid-column:1/-1;" value="${pop.btnUrl}"></div></div><button type="submit" class="btn-primary" style="grid-column:1/-1; padding:15px;">시스템 설정 저장</button></form></div>`;
+        html += `<div class="admin-card" style="grid-column:1/-1;"><h2 style="margin-bottom:20px; color:#60a5fa;">📲 학생 대시보드 & 팝업 시스템 설정</h2><form id="form-admin-system" style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:40px;"><div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;"><h3 style="margin-bottom:15px; font-size:1rem; color:white;">학생 홈 상단 공지 배너</h3><input type="text" id="set-dash-banner" class="admin-input" value="${set.dashBanner}" placeholder="학생 로그인 시 홈 화면 상단에 띄울 문구"></div><div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;"><div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3 style="font-size:1rem; color:white;">학생 로그인 자동 팝업창 (모달)</h3><label style="color:var(--text-muted);"><input type="checkbox" id="set-pop-active" ${pop.active?'checked':''}> 팝업 활성화 켜기</label></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;"><input type="text" id="set-pop-tag" class="admin-input" value="${pop.tag}" placeholder="태그 문구 (예: 협업 피드백 이벤트)"><input type="text" id="set-pop-title" class="admin-input" value="${pop.title}" placeholder="큰 제목"><textarea id="set-pop-desc" class="admin-input" style="grid-column:1/-1; height:60px;" placeholder="서브 설명">${pop.desc}</textarea><div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 내용 (흰색)</h4><input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}" placeholder="박스 1 제목"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}" placeholder="박스 1 설명 (HTML 허용)"></div><div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 내용 (어두운색)</h4><input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}" placeholder="박스 2 제목"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}" placeholder="박스 2 설명"></div><input type="text" id="set-pop-btn-url" class="admin-input" style="grid-column:1/-1;" value="${pop.btnUrl}" placeholder="버튼 이동 링크 (카카오톡 등)"></div></div><button type="submit" class="btn-primary" style="grid-column:1/-1; padding:15px; font-size:1.1rem;">시스템 설정 저장</button></form><hr style="border-color:var(--border); margin:40px 0;"><h2 style="margin-bottom:20px; color:#60a5fa;">🌐 랜딩(홈페이지) 실시간 편집</h2><form id="form-admin-settings" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;"><div style="background:var(--bg-dark); padding:20px; border-radius:12px;"><h3 style="margin-bottom:15px; font-size:1rem;">1. 배너</h3><input type="text" id="set-h-sub" class="admin-input" value="${AppState.data.landing?.heroSub}"><textarea id="set-h-tit" class="admin-input" style="height:70px;">${AppState.data.landing?.heroTitle.replace(/<br>/g, '\n')}</textarea><input type="text" id="set-h-desc" class="admin-input" value="${AppState.data.landing?.heroDesc}"></div><div style="background:var(--bg-dark); padding:20px; border-radius:12px;"><h3 style="margin-bottom:15px; font-size:1rem;">2. 통계</h3><div style="display:flex; gap:10px;"><input type="text" id="set-s1-n" class="admin-input" value="${AppState.data.landing?.s1Num}"><input type="text" id="set-s1-t" class="admin-input" value="${AppState.data.landing?.s1Txt}"></div><div style="display:flex; gap:10px;"><input type="text" id="set-s2-n" class="admin-input" value="${AppState.data.landing?.s2Num}"><input type="text" id="set-s2-t" class="admin-input" value="${AppState.data.landing?.s2Txt}"></div><div style="display:flex; gap:10px;"><input type="text" id="set-s3-n" class="admin-input" value="${AppState.data.landing?.s3Num}"><input type="text" id="set-s3-t" class="admin-input" value="${AppState.data.landing?.s3Txt}"></div></div><div style="background:var(--bg-dark); padding:20px; border-radius:12px;"><h3 style="margin-bottom:15px; font-size:1rem;">3. 특징 섹션 (왼쪽)</h3><div style="display:flex; gap:10px;"><input type="text" id="set-f1-b" class="admin-input" value="${AppState.data.landing?.f1Badge}"><select id="set-f1-c" class="admin-input"><option value="red" ${AppState.data.landing?.f1Col==='red'?'selected':''}>빨강</option><option value="blue" ${AppState.data.landing?.f1Col==='blue'?'selected':''}>파랑</option><option value="green" ${AppState.data.landing?.f1Col==='green'?'selected':''}>초록</option></select></div><input type="text" id="set-f1-t" class="admin-input" value="${AppState.data.landing?.f1Title}"><input type="text" id="set-f1-d" class="admin-input" value="${AppState.data.landing?.f1Desc}"><input type="text" id="set-f1-e" class="admin-input" value="${AppState.data.landing?.f1Emoji}"></div><div style="background:var(--bg-dark); padding:20px; border-radius:12px;"><h3 style="margin-bottom:15px; font-size:1rem;">4. 특징 섹션 (오른쪽)</h3><div style="display:flex; gap:10px;"><input type="text" id="set-f2-b" class="admin-input" value="${AppState.data.landing?.f2Badge}"><select id="set-f2-c" class="admin-input"><option value="red" ${AppState.data.landing?.f2Col==='red'?'selected':''}>빨강</option><option value="blue" ${AppState.data.landing?.f2Col==='blue'?'selected':''}>파랑</option><option value="green" ${AppState.data.landing?.f2Col==='green'?'selected':''}>초록</option></select></div><input type="text" id="set-f2-t" class="admin-input" value="${AppState.data.landing?.f2Title}"><input type="text" id="set-f2-d" class="admin-input" value="${AppState.data.landing?.f2Desc}"><input type="text" id="set-f2-e" class="admin-input" value="${AppState.data.landing?.f2Emoji}"></div><div style="grid-column:1/-1; background:var(--bg-dark); padding:20px; border-radius:12px;"><h3 style="margin-bottom:15px; font-size:1rem;">5. 하단 CTA 배너</h3><input type="text" id="set-b-tit" class="admin-input" value="${AppState.data.landing?.botTitle}" style="margin:0;"></div><button type="submit" class="btn-primary" style="grid-column:1/-1; padding:15px; font-size:1.1rem;">홈페이지 저장 및 실시간 반영</button></form></div>`;
     }
-    html += '</div>'; container.innerHTML = html;
+    else { html += `<div class="admin-card" style="grid-column:1/-1;"><p style="text-align:center; padding:40px; color:var(--text-muted);">준비 중입니다.</p></div>`; }
+    html += '</div>';
+    container.innerHTML = html;
 }
 
 // =========================================================
-// [통합 이벤트 위임 - 클릭 충돌 완벽 방어]
+// [통합 이벤트 위임]
 // =========================================================
 document.body.addEventListener('change', async (e) => {
     if (e.target.matches('input[type="file"]')) {
@@ -533,13 +535,18 @@ document.body.addEventListener('submit', async (e) => {
         if(!AppState.data.users) AppState.data.users = [];
         if(AppState.data.users.some(u => u.id === id) || id === 'studycampus') return showToast("이미 존재하는 아이디입니다.");
         const d = new Date(); d.setDate(d.getDate() + 30);
-        AppState.data.users.push({ id, name: document.getElementById('reg-name').value || id, pw: document.getElementById('reg-pw').value, school: document.getElementById('reg-school').value, grade: document.getElementById('reg-grade').value, role: 'student', active: true, xp: 0, ticketExpiry: d.toISOString().split('T')[0] });
+        
+        // 🔥 입력된 학교명을 정규화하여 저장
+        const normalizedSchool = normalizeSchool(document.getElementById('reg-school').value);
+
+        AppState.data.users.push({ id, name: document.getElementById('reg-name').value || id, pw: document.getElementById('reg-pw').value, school: normalizedSchool, grade: document.getElementById('reg-grade').value, role: 'student', active: true, xp: 0, ticketExpiry: d.toISOString().split('T')[0] });
         syncData(); showToast("가입 완료! 로그인 해주세요."); switchAuthMode('login');
     }
     else if(e.target.id === 'form-student-edit') {
         const name = document.getElementById('stu-edit-name').value.trim();
         const pw = document.getElementById('stu-edit-pw').value.trim();
-        const school = document.getElementById('stu-edit-school').value.trim();
+        // 🔥 변경되는 학교명도 정규화
+        const school = normalizeSchool(document.getElementById('stu-edit-school').value);
         const grade = document.getElementById('stu-edit-grade').value.trim();
 
         const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
@@ -579,7 +586,8 @@ document.body.addEventListener('submit', async (e) => {
         const id = document.getElementById('mod-stu-id').value.trim(); 
         const name = document.getElementById('mod-stu-name').value.trim(); 
         const pw = document.getElementById('mod-stu-pw').value.trim(); 
-        const school = document.getElementById('mod-stu-school').value.trim(); 
+        // 🔥 관리자 등록 시에도 학교명 정규화
+        const school = normalizeSchool(document.getElementById('mod-stu-school').value); 
         const grade = document.getElementById('mod-stu-grade').value.trim(); 
         const expiry = document.getElementById('mod-stu-expiry').value;
         const teacher = document.getElementById('mod-stu-teacher').value.trim();
@@ -598,7 +606,7 @@ document.body.addEventListener('submit', async (e) => {
         }
         AppState.adminModal.isOpen = false; syncData(); renderAdminDashboard();
     }
-    // 🔥 [수정됨] 게시물 생성 시 authorId (고유식별자) 저장 추가
+    // 게시물 생성 시 authorId (고유식별자) 저장 유지
     else if(e.target.id === 'form-community') {
         if (!AppState.data.community) AppState.data.community = [];
         AppState.data.community.unshift({ id: generateId(), authorId: AppState.currentUser.id, author: AppState.currentUser.name, content: document.getElementById('comm-text').value, date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }), likes: [], comments: [] });
