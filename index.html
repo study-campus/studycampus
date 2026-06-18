@@ -12,9 +12,9 @@
     <header class="global-header global-element" id="main-nav">
         <div class="logo-font" data-action="nav" data-target="landing">studycampus</div>
         <div class="nav-center">
-            <span>왜 StudyCampus?</span>
-            <span>학습 시스템</span>
-            <span>커리큘럼</span>
+            <span data-action="nav" data-target="landing">왜 StudyCampus?</span>
+            <span data-action="nav" data-target="landing">학습 시스템</span>
+            <span data-action="nav" data-target="landing">커리큘럼</span>
         </div>
         <div class="nav-right">
             <span id="user-profile-tag" class="hidden" style="margin-right:15px; font-weight:bold; color:white;"></span>
@@ -83,12 +83,14 @@
                     <input type="password" id="login-pw" class="auth-input" required placeholder="비밀번호">
                     <button type="submit" class="btn-primary auth-submit">로그인</button>
                 </form>
-                <div class="auth-footer"><span data-action="switch-auth" data-mode="register" style="cursor:pointer;">회원가입</span> &nbsp;|&nbsp; <span style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span></div>
+                <div class="auth-footer">
+                    <span data-action="switch-auth" data-mode="register" style="cursor:pointer; color:#60a5fa;">회원가입</span> &nbsp;|&nbsp; <span style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span>
+                </div>
             </div>
 
             <div class="auth-modal hidden" id="modal-register">
                 <button class="btn-back" data-action="nav" data-target="landing">&larr; 홈으로</button>
-                <div class="auth-header" style="margin-top:20px;">
+                <div class="auth-header" style="margin-top:10px;">
                     <h2 class="logo-font" style="font-size:2.5rem; color:#60a5fa; margin-bottom:10px;">studycampus</h2>
                     <p style="font-weight:700;">계정 가입</p>
                 </div>
@@ -106,16 +108,18 @@
                             <option value="고1">고1</option><option value="고2" selected>고2</option><option value="고3">고3</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn-primary auth-submit" style="margin-top:20px;">가입 완료</button>
+                    <button type="submit" class="btn-primary auth-submit" style="margin-top:10px;">가입 완료</button>
                 </form>
-                <div class="auth-footer" style="margin-top:20px;"><span data-action="switch-auth" data-mode="login" style="cursor:pointer; color:var(--text-muted);">&larr; 뒤로</span></div>
+                <div class="auth-footer" style="margin-top:15px;">
+                    <span data-action="switch-auth" data-mode="login" style="cursor:pointer; color:var(--text-muted);">&larr; 뒤로 가기</span>
+                </div>
             </div>
         </section>
     </main>
 
     <section id="view-student" class="view hidden stu-wrapper">
         <header class="stu-header">
-            <div class="logo-font" style="font-size:1.5rem; color:#60a5fa;">studycampus</div>
+            <div class="logo-font" style="font-size:1.5rem; color:#60a5fa;" data-action="switch-student-tab" data-tab="home">studycampus</div>
             <div class="stu-header-right">
                 <span style="font-size:20px; cursor:pointer;">🔔</span>
                 <button class="stu-btn-outline" data-action="auth-toggle">로그아웃</button>
