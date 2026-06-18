@@ -9,7 +9,6 @@
 <body>
     <div id="toast-container"></div>
 
-    <!-- 랜딩 전용 네비게이션 -->
     <header class="global-header global-element" id="main-nav">
         <div class="logo-font" data-action="nav" data-target="landing">studycampus</div>
         <div class="nav-center">
@@ -64,9 +63,7 @@
             </div>
         </section>
 
-        <!-- 🔥 로그인/회원가입 뷰 (틀어짐 현상 완벽 방어) -->
         <section id="view-auth" class="view hidden auth-wrapper">
-            <!-- 로그인 모달 -->
             <div class="auth-modal" id="modal-login">
                 <button class="btn-back" data-action="nav" data-target="landing">&larr; 홈으로</button>
                 <div class="auth-header">
@@ -85,7 +82,6 @@
                 </div>
             </div>
 
-            <!-- 회원가입 모달 (하단 링크 제거됨) -->
             <div class="auth-modal hidden" id="modal-register">
                 <button class="btn-back" data-action="nav" data-target="landing">&larr; 홈으로</button>
                 <div class="auth-header" style="margin-top:10px;">
@@ -101,9 +97,18 @@
                         <input type="password" id="reg-pw-confirm" class="auth-input" required placeholder="비밀번호 확인" style="flex:1;">
                     </div>
                     <div style="display:flex; gap:10px; width:100%;">
-                        <input type="text" id="reg-school" class="auth-input" placeholder="학교명" style="flex:1;">
+                        <input type="text" id="reg-school" class="auth-input" placeholder="학교명 (예: 대화고)" style="flex:1;">
                         <select id="reg-grade" class="auth-input" style="color:white; font-weight:bold; flex:1;">
-                            <option value="고1">고1</option><option value="고2" selected>고2</option><option value="고3">고3</option>
+                            <option value="중1">중1</option>
+                            <option value="중2">중2</option>
+                            <option value="중3">중3</option>
+                            <option value="고1">고1</option>
+                            <option value="고2" selected>고2</option>
+                            <option value="고3">고3</option>
+                            <option value="대1">대1</option>
+                            <option value="대2">대2</option>
+                            <option value="대3">대3</option>
+                            <option value="대4">대4</option>
                         </select>
                     </div>
                     <button type="submit" class="btn-primary auth-submit" style="margin-top:10px;">가입 완료</button>
@@ -115,7 +120,6 @@
         </section>
     </main>
 
-    <!-- [학생 대시보드] -->
     <section id="view-student" class="view hidden stu-wrapper">
         <header class="stu-header">
             <div class="logo-font" style="font-size:1.5rem; color:#60a5fa; cursor:pointer;" data-action="switch-student-tab" data-tab="home">studycampus</div>
@@ -138,7 +142,6 @@
             <div class="stu-nav-item" data-action="switch-student-tab" data-tab="mypage"><span class="stu-nav-icon">👤</span>MY</div>
         </nav>
 
-        <!-- 학생 이벤트 팝업 -->
         <div id="student-auto-popup" class="auto-popup-overlay hidden">
             <div class="auto-popup-card">
                 <button class="auto-popup-close" data-action="close-popup">×</button>
@@ -152,7 +155,6 @@
             </div>
         </div>
 
-        <!-- 학생 정보 수정 모달 -->
         <div id="modal-student-edit" class="modal-overlay hidden">
             <div class="modal-content" style="max-width:400px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -163,9 +165,11 @@
                     <input type="text" id="stu-edit-name" class="auth-input" required placeholder="실명">
                     <input type="password" id="stu-edit-pw" class="auth-input" placeholder="새 비밀번호 (변경 시에만 입력)">
                     <div style="display:flex; gap:10px;">
-                        <input type="text" id="stu-edit-school" class="auth-input" placeholder="학교명">
+                        <input type="text" id="stu-edit-school" class="auth-input" placeholder="학교명 (예: 대화고)">
                         <select id="stu-edit-grade" class="auth-input" style="color:white; font-weight:bold;">
+                            <option value="중1">중1</option><option value="중2">중2</option><option value="중3">중3</option>
                             <option value="고1">고1</option><option value="고2">고2</option><option value="고3">고3</option>
+                            <option value="대1">대1</option><option value="대2">대2</option><option value="대3">대3</option><option value="대4">대4</option>
                         </select>
                     </div>
                     <button type="submit" class="btn-primary btn-block" style="margin-top:10px;">수정 완료</button>
@@ -174,7 +178,6 @@
         </div>
     </section>
 
-    <!-- [수강권 결제 센터] -->
     <section id="view-payment" class="view hidden stu-wrapper" style="background:#0f172a;">
         <header class="stu-header" style="justify-content:center; position:relative; background:#0f172a; border-bottom:1px solid #1e293b;">
             <button class="stu-btn-outline" style="position:absolute; left:20px; border-color:#334155;" data-action="back-to-mypage">&larr; 뒤로가기</button>
@@ -208,7 +211,6 @@
         </main>
     </section>
 
-    <!-- [관리자 대시보드] -->
     <section id="view-admin" class="view hidden admin-wrapper">
         <div class="admin-top-bar">🟢 클라우드 연동중</div>
         <header class="admin-header">
@@ -233,7 +235,6 @@
         카톡 상담
     </a>
 
-    <!-- AI 리포트 자동 작성 팝업 모달 -->
     <div id="modal-ai-report" class="modal-overlay hidden">
         <div class="modal-content" style="max-width:500px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
