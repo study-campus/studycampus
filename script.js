@@ -39,11 +39,7 @@ function showToast(msg) {
 }
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 function getCurrentWeekString(d = new Date()) { return `${d.getMonth() + 1}월 ${Math.ceil((d.getDate() - 1 + new Date(d.getFullYear(), d.getMonth(), 1).getDay() + 1) / 7)}주차`; }
-
-// 강의 타이머 초기화 공통 함수 (메모리 누수 방지)
-function clearLectureTimer() {
-    if(AppState.lectureTimer) { clearInterval(AppState.lectureTimer); AppState.lectureTimer = null; }
-}
+function clearLectureTimer() { if(AppState.lectureTimer) { clearInterval(AppState.lectureTimer); AppState.lectureTimer = null; } }
 
 // ------------------------- 파이어베이스 (실시간 동기화) -------------------------
 const dbRef = ref(db, 'studycampus_data');
@@ -71,7 +67,8 @@ function switchView(viewName) {
     
     AppState.currentView = viewName;
     document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-    document.getElementById(`view-${viewName}`).classList.remove('hidden');
+    const targetView = document.getElementById(`view-${viewName}`);
+    if(targetView) targetView.classList.remove('hidden');
     
     if (viewName === 'auth') switchAuthMode('login');
     const isAppView = viewName === 'student' || viewName === 'admin' || viewName === 'payment';
@@ -156,7 +153,24 @@ function renderStudentDashboard() {
     if (studentTab === 'home') {
         const dashBanner = data.settings?.dashBanner || '';
         if (dashBanner) html += `<div class="stu-banner-top"><span style="font-size:18px;">📢</span> <span>${dashBanner}</span></div>`;
-        html += `<div class="stu-banner-blue"><div style="display:flex; justify-content:space-between; align-items:flex-start;"><div><div style="font-size:12px; font-weight:800; margin-bottom:8px; opacity:0.9;">WEEK</div><div style="font-size:28px; font-weight:800; margin-bottom:10px; letter-spacing:-1px;">${me.name}님!</div><div style="font-size:14px; font-weight:600; opacity:0.9;">대기중</div></div><div style="width:50px; height:50px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; justify-content:center; align-items:center; font-size:24px;">👨‍🎓</div></div><div style="display:flex; gap:15px; margin-top:30px;"><div style="flex:1; background:rgba(255,255,255,0.15); border-radius:12px; padding:15px; display:flex; align-items:center; gap:15px;"><div style="font-size:26px;">🔥</div><div><div style="font-size:18px; font-weight:800;">1일</div><div style="font-size:11px; opacity:0.8; margin-top:4px;">연속 출석</div></div></div><div style="flex:1; background:rgba(255,255,255,0.15); border-radius:12px; padding:15px; display:flex; align-items:center; gap:15px;"><div style="font-size:26px;">💎</div><div><div style="font-size:18px; font-weight:800;">${me.xp || 0} XP</div><div style="font-size:11px; opacity:0.8; margin-top:4px;">누적 점수</div></div></div></div></div>`;
+        
+        // 🔥 담당 선생님 정보 반영 완료 배너
+        html += `
+        <div class="stu-banner-blue" style="position:relative; overflow:hidden;">
+            <div style="position:absolute; right:-20px; bottom:-20px; width:150px; height:150px; background:rgba(255,255,255,0.1); border-radius:50%;"></div>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; position:relative; z-index:1;">
+                <div>
+                    <div style="font-size:12px; font-weight:800; margin-bottom:8px; opacity:0.8; letter-spacing:1px; text-transform:uppercase;">WEEK ${AppState.currentHwWeekNumber}</div>
+                    <div style="font-size:26px; font-weight:800; margin-bottom:12px; letter-spacing:-1px; line-height:1.3;">${me.name}님,<br>오늘도 파이팅!</div>
+                    <div style="font-size:13px; font-weight:500; opacity:0.9;">${me.school||'학교정보 없음'} ${me.grade||''} · ${me.teacher||'담당T 미배정'}</div>
+                </div>
+                <div style="width:60px; height:60px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; justify-content:center; align-items:center; font-size:32px; box-shadow:0 4px 10px rgba(0,0,0,0.1);">👩‍🏫</div>
+            </div>
+            <div style="display:flex; gap:15px; margin-top:30px; position:relative; z-index:1;">
+                <div style="flex:1; background:rgba(255,255,255,0.15); border-radius:12px; padding:15px; display:flex; align-items:center; gap:15px;"><div style="font-size:26px;">🔥</div><div><div style="font-size:18px; font-weight:800;">1일</div><div style="font-size:11px; opacity:0.8; margin-top:4px;">연속 출석</div></div></div>
+                <div style="flex:1; background:rgba(255,255,255,0.15); border-radius:12px; padding:15px; display:flex; align-items:center; gap:15px;"><div style="font-size:26px;">💎</div><div><div style="font-size:18px; font-weight:800;">${me.xp || 0} XP</div><div style="font-size:11px; opacity:0.8; margin-top:4px;">누적 점수</div></div></div>
+            </div>
+        </div>`;
     } 
     else if (studentTab === 'homework') {
         const curWeekStr = `${AppState.currentHwWeekNumber}주차`;
@@ -174,11 +188,9 @@ function renderStudentDashboard() {
             else html += `<div style="background:#0f172a; padding:15px; border-radius:8px;"><span style="color:${sub.status==='approved'?'#10b981':(sub.status==='rejected'?'#ef4444':'#60a5fa')}; font-weight:bold;">${sub.status==='approved'?'승인완료':(sub.status==='rejected'?'반려됨':'검사 대기중')}</span><p style="margin-top:5px; font-size:13px; color:var(--text-muted);">제출된 파일: ${sub.files.length}개</p>${sub.status==='rejected'?`<button class="stu-btn-outline" style="margin-top:10px; border-color:#ef4444; color:#ef4444;" data-action="cancel-hw" data-subid="${sub.id}">다시 제출</button>`:''}</div></div>`;
         });
     }
-    else if (studentTab === 'test') {
-        html += `<div class="stu-banner-green">나의 테스트실</div><div class="stu-empty">시험지 없음</div>`;
-    }
+    else if (studentTab === 'test') html += `<div class="stu-banner-green">나의 테스트실</div><div class="stu-empty">시험지 없음</div>`;
     else if (studentTab === 'lectures') {
-        html += `<div class="stu-banner-blue" style="font-size:22px; font-weight:800; display:flex; justify-content:space-between; align-items:center;">강의 수강</div>`;
+        html += `<div class="stu-banner-blue" style="font-size:22px; font-weight:800;">강의 수강</div>`;
         if (AppState.activeLecture) {
             const lec = AppState.activeLecture; const progress = me.lectureProgress?.[lec.id] || { percent: 0, done: false };
             html += `<div style="background:#000; border-radius:16px; aspect-ratio:16/9; display:flex; flex-direction:column; justify-content:center; align-items:center; position:relative; margin-bottom:20px;">${progress.done ? '<div style="font-size:24px; color:#10b981; font-weight:bold;">✅ 시청 완료</div>' : `<div style="font-size:50px; cursor:pointer;" data-action="play-video">▶️</div>`}<div style="position:absolute; bottom:0; left:0; width:100%; height:6px; background:#333;"><div id="live-progress-bar" style="width:${progress.percent}%; height:100%; background:#3b82f6; transition:width 1s linear;"></div></div></div><div class="stu-card"><h3>${lec.title}</h3><p style="color:var(--text-muted); margin-top:5px;">90% 이상 시청 시 완료 처리 (현재 <span id="live-progress-text" style="color:#60a5fa; font-weight:bold;">${progress.percent}%</span>)</p></div><button class="btn-outline btn-block" style="border-color:#334155;" data-action="close-lecture">목록으로 돌아가기</button>`;
@@ -204,7 +216,7 @@ function renderStudentDashboard() {
     else if (studentTab === 'community') {
         html += `<h2 style="font-size:24px; font-weight:800; color:#60a5fa; margin-bottom:20px;">소통 커뮤니티</h2><div class="stu-card" style="padding:10px;"><form id="form-community" style="display:flex; gap:10px;"><input type="text" id="comm-text" required placeholder="질문방 작성..." style="flex:1; background:transparent; border:1px solid #334155; border-radius:8px; padding:12px 15px; color:white; outline:none; font-size:14px;"><button type="submit" class="btn-primary" style="width:auto; padding:0 20px;">등록</button></form></div>`;
         if (!data.community || data.community.length === 0) html += `<div style="text-align:center; color:#64748b; margin-top:60px; font-size:14px; font-weight:600;">등록된 글이 없습니다.</div>`;
-        else data.community.forEach(c => html += `<div class="stu-card" style="cursor:pointer; transition:0.2s;" data-action="open-post" data-id="${c.id}"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><strong style="font-size:14px;">👤 ${c.author}</strong><span style="color:#64748b; font-size:12px;">${c.date||''}</span></div><p style="font-size:15px; line-height:1.5;">${c.content}</p><div style="margin-top:10px; font-size:13px; color:#64748b;">❤️ ${c.likes?c.likes.length:0} &nbsp; 💬 ${c.comments?c.comments.length:0}</div></div>`);
+        else data.community.forEach(c => html += `<div class="stu-card" style="cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='var(--border)'" data-action="open-post" data-id="${c.id}"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><strong style="font-size:14px;">👤 ${c.author}</strong><span style="color:#64748b; font-size:12px;">${c.date||''}</span></div><p style="font-size:15px; line-height:1.5;">${c.content}</p><div style="margin-top:10px; font-size:13px; color:#64748b;">❤️ ${c.likes?c.likes.length:0} &nbsp; 💬 ${c.comments?c.comments.length:0}</div></div>`);
         
         if (AppState.activePostId) {
             const post = data.community.find(c => c.id === AppState.activePostId);
@@ -222,20 +234,47 @@ function renderStudentDashboard() {
     container.innerHTML = html;
 }
 
-// =========================================================
-// [관리자 대시보드 렌더링]
-// =========================================================
+// ------------------------- 관리자 렌더링 -------------------------
 function renderAdminDashboard() {
     const container = document.getElementById('admin-dash-content');
-    const tab = AppState.adminTab; const data = AppState.data; const set = data.settings || DEFAULT_STATE.settings;
+    const tab = AppState.adminTab;
+    const data = AppState.data;
+    const set = data.settings || DEFAULT_STATE.settings;
     let html = '<div class="admin-grid">';
+
     document.querySelectorAll('#admin-top-nav .admin-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
 
     if (tab === 'users') {
-        html += `<div class="admin-card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h2>👨‍🎓 가입 학생 명단</h2><button class="btn-primary btn-sm" data-action="open-admin-modal" data-mode="add">+ 원생 추가</button></div><table class="admin-table"><thead><tr><th>이름(ID)</th><th>학교/학년</th><th>수강 기한</th><th>상태</th><th>관리</th></tr></thead><tbody>${(!data.users||data.users.length===0)?'<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">학생이 없습니다.</td></tr>':data.users.map(u => `<tr><td><strong>${u.name}</strong><br><span style="color:var(--text-muted); font-size:0.85rem;">${u.id}</span></td><td>${u.school||'미기입'}<br><span style="color:var(--text-muted); font-size:0.85rem;">${u.grade||'미기입'}</span></td><td><span class="badge-blue">${u.ticketExpiry || '미설정'}</span></td><td><span style="color:${u.active?'#10b981':'#ef4444'}; font-weight:bold;">${u.active ? '정상' : '정지'}</span></td><td><div style="display:flex; gap:5px;"><button class="btn-sm btn-outline" data-action="open-admin-modal" data-mode="edit" data-id="${u.id}">수정</button><button class="btn-sm btn-primary" style="background:#4f46e5;" data-action="open-ai-modal" data-id="${u.id}">✨ AI 리포트</button><button class="btn-sm btn-danger" data-action="delete-user" data-id="${u.id}">삭제</button></div></td></tr>`).join('')}</tbody></table></div>`;
+        html += `<div class="admin-card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><h2>👨‍🎓 가입 학생 명단</h2><button class="btn-primary btn-sm" data-action="open-admin-modal" data-mode="add">+ 원생 추가</button></div><table class="admin-table"><thead><tr><th>이름(ID)</th><th>학교/학년/담당T</th><th>수강 기한</th><th>상태</th><th>관리</th></tr></thead><tbody>${(!data.users||data.users.length===0)?'<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:30px;">학생이 없습니다.</td></tr>':data.users.map(u => `<tr><td><strong>${u.name}</strong><br><span style="color:var(--text-muted); font-size:0.85rem;">${u.id}</span></td><td>${u.school||'미기입'}<br><span style="color:var(--text-muted); font-size:0.85rem;">${u.grade||''} · ${u.teacher||'담당 미배정'}</span></td><td><span class="badge-blue">${u.ticketExpiry || '미설정'}</span></td><td><span style="color:${u.active?'#10b981':'#ef4444'}; font-weight:bold;">${u.active ? '정상' : '정지'}</span></td><td><div style="display:flex; gap:5px;"><button class="btn-sm btn-outline" data-action="open-admin-modal" data-mode="edit" data-id="${u.id}">수정</button><button class="btn-sm btn-primary" style="background:#4f46e5;" data-action="open-ai-modal" data-id="${u.id}">✨ AI 리포트</button><button class="btn-sm btn-danger" data-action="delete-user" data-id="${u.id}">삭제</button></div></td></tr>`).join('')}</tbody></table></div>`;
+
         if (AppState.adminModal && AppState.adminModal.isOpen) {
-            const mode = AppState.adminModal.mode; const stu = mode === 'edit' ? data.users.find(u => u.id === AppState.adminModal.studentId) : {};
-            html += `<div class="modal-overlay"><div class="modal-content"><h2 class="modal-title">${mode === 'add' ? '✨ 신규 원생 추가' : '📝 원생 정보 수정'}</h2><form id="form-admin-student"><input type="text" id="mod-stu-name" class="admin-input" placeholder="학생 이름" required value="${stu.name || ''}"><input type="text" id="mod-stu-id" class="admin-input" placeholder="아이디" required value="${stu.id || ''}" ${mode === 'edit' ? 'disabled' : ''}><input type="password" id="mod-stu-pw" class="admin-input" placeholder="${mode === 'edit' ? '비밀번호 (변경 시에만 입력)' : '초기 비밀번호'}" ${mode === 'add' ? 'required' : ''}><div style="display:flex; gap:10px;"><input type="text" id="mod-stu-school" class="admin-input" placeholder="학교명" value="${stu.school || ''}"><input type="text" id="mod-stu-grade" class="admin-input" placeholder="학년 (예: 고2)" value="${stu.grade || ''}"></div><input type="date" id="mod-stu-expiry" class="admin-input" value="${stu.ticketExpiry || ''}" placeholder="수강 만료일"><div style="display:flex; gap:10px; margin-top:10px;"><button type="button" class="btn-white-outline" style="width:100%; border-color:#334155; color:#94a3b8;" data-action="close-admin-modal">취소</button><button type="submit" class="btn-primary" style="width:100%;">${mode === 'add' ? '추가하기' : '수정 완료'}</button></div></form></div></div>`;
+            const mode = AppState.adminModal.mode; 
+            const stu = mode === 'edit' ? data.users.find(u => u.id === AppState.adminModal.studentId) : {};
+            
+            // 🔥 담임 선생님 배정란 추가 완료
+            html += `
+            <div class="modal-overlay">
+                <div class="modal-content">
+                    <h2 class="modal-title">${mode === 'add' ? '✨ 신규 원생 추가' : '📝 원생 정보 수정'}</h2>
+                    <form id="form-admin-student">
+                        <input type="text" id="mod-stu-name" class="admin-input" placeholder="학생 이름" required value="${stu.name || ''}">
+                        <input type="text" id="mod-stu-id" class="admin-input" placeholder="아이디" required value="${stu.id || ''}" ${mode === 'edit' ? 'disabled' : ''}>
+                        <input type="password" id="mod-stu-pw" class="admin-input" placeholder="${mode === 'edit' ? '비밀번호 (변경 시에만 입력)' : '초기 비밀번호'}" ${mode === 'add' ? 'required' : ''}>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="mod-stu-school" class="admin-input" placeholder="학교명" value="${stu.school || ''}">
+                            <input type="text" id="mod-stu-grade" class="admin-input" placeholder="학년 (예: 고2)" value="${stu.grade || ''}">
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <input type="date" id="mod-stu-expiry" class="admin-input" value="${stu.ticketExpiry || ''}" placeholder="수강 만료일">
+                            <input type="text" id="mod-stu-teacher" class="admin-input" placeholder="담임 선생님 (예: 현서T)" value="${stu.teacher || ''}">
+                        </div>
+                        <div style="display:flex; gap:10px; margin-top:10px;">
+                            <button type="button" class="btn-white-outline" style="width:100%; border-color:#334155; color:#94a3b8;" data-action="close-admin-modal">취소</button>
+                            <button type="submit" class="btn-primary" style="width:100%;">${mode === 'add' ? '추가하기' : '수정 완료'}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>`;
         }
     } 
     else if (tab === 'deploy') {
@@ -261,19 +300,20 @@ function renderAdminDashboard() {
 }
 
 // =========================================================
-// [이벤트 위임 - 클릭 통제소]
+// [통합 이벤트 위임 (클릭 통제 로직)]
 // =========================================================
 document.body.addEventListener('change', async (e) => {
-    // 폼과 분리되어 작동하는 파일 입력 핸들링
     if (e.target.matches('input[type="file"]')) {
         const files = Array.from(e.target.files);
         if(files.length === 0) return;
         if(files.some(f => f.size > 2 * 1024 * 1024)) { e.target.value = ''; return showToast('⚠️ 2MB 이하 파일만 가능'); }
         showToast("파일 처리 중...");
+        
         try {
             const b64 = await Promise.all(files.map(f => new Promise(res => {
                 const r = new FileReader(); r.onload = ev => res({ name: f.name, data: ev.target.result }); r.readAsDataURL(f);
             })));
+            
             if (e.target.id === 'pay-req-file') {
                 e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료");
             } else if (e.target.dataset.hwid) {
@@ -290,6 +330,7 @@ document.body.addEventListener('click', (e) => {
     if (!actionNode) return;
     const action = actionNode.dataset.action;
 
+    // 네비게이션
     if (action === 'nav') switchView(actionNode.dataset.target);
     else if (action === 'auth-toggle') {
         if(AppState.currentUser) { AppState.currentUser = null; localStorage.removeItem('studycampus_session'); showToast("로그아웃 완료"); switchView('landing'); }
@@ -302,11 +343,11 @@ document.body.addEventListener('click', (e) => {
     else if (action === 'switch-auth') switchAuthMode(actionNode.dataset.mode);
     else if (action === 'switch-admin-tab') { AppState.adminTab = actionNode.dataset.tab; renderAdminDashboard(); }
     else if (action === 'switch-student-tab') { 
-        clearLectureTimer(); // 탭 이동 시 타이머 해제
-        AppState.studentTab = actionNode.dataset.tab; 
-        renderStudentDashboard(); 
+        clearLectureTimer(); AppState.studentTab = actionNode.dataset.tab; renderStudentDashboard(); 
     }
     else if (action === 'back-to-mypage') { AppState.studentTab = 'mypage'; switchView('student'); }
+    
+    // 학생
     else if (action === 'toggle-notif') { 
         const drop = document.getElementById('notif-dropdown'); 
         if(drop) drop.classList.toggle('hidden'); 
@@ -337,7 +378,6 @@ document.body.addEventListener('click', (e) => {
         const lecId = AppState.activeLecture.id;
         const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
         if(!AppState.data.users[userIdx].lectureProgress) AppState.data.users[userIdx].lectureProgress = {};
-        
         let prog = AppState.data.users[userIdx].lectureProgress[lecId]?.percent || 0;
         actionNode.innerHTML = '⏸️'; showToast("수강 기록 시작");
         
@@ -351,9 +391,11 @@ document.body.addEventListener('click', (e) => {
     }
     else if (action === 'trigger-file') document.getElementById(`hw-file-${actionNode.dataset.id}`).click();
     else if (action === 'cancel-hw') { AppState.data.hwSubmissions = AppState.data.hwSubmissions.filter(s => s.id !== actionNode.dataset.subid); syncData(); showToast("기존 제출본이 취소되었습니다."); }
-    else if (action === 'delete-account') { if(confirm("탈퇴하시겠습니까?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); localStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
+    else if (action === 'delete-account') { if(confirm("탈퇴하시겠습니까? (데이터 삭제)")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); localStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
+    
+    // 관리자
     else if (action === 'toggle-user') { const user = AppState.data.users.find(u => String(u.id) === String(actionNode.dataset.id)); if(user) user.active = !user.active; syncData(); showToast("상태가 변경되었습니다."); }
-    else if (action === 'delete-user') { if(confirm("정말 삭제할까요?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== actionNode.dataset.id); syncData(); showToast("삭제되었습니다."); renderAdminDashboard(); } }
+    else if (action === 'delete-user') { if(confirm("정말 삭제하시겠습니까?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== actionNode.dataset.id); syncData(); showToast("삭제되었습니다."); renderAdminDashboard(); } }
     else if (action === 'open-admin-modal') { AppState.adminModal = { isOpen: true, mode: actionNode.dataset.mode, studentId: actionNode.dataset.id || null }; renderAdminDashboard(); }
     else if (action === 'close-admin-modal') { AppState.adminModal.isOpen = false; renderAdminDashboard(); }
     else if (action === 'review-hw') { const sub = AppState.data.hwSubmissions.find(s => s.id === actionNode.dataset.subid); if(sub) { sub.status = actionNode.dataset.status; syncData(); showToast("검사 상태 변경"); } }
@@ -373,9 +415,12 @@ document.body.addEventListener('click', (e) => {
     }
 });
 
-// 폼(Form) 이벤트 
+// =========================================================
+// [폼(Form) 제출 이벤트 통제]
+// =========================================================
 document.body.addEventListener('submit', async (e) => {
     e.preventDefault();
+    
     if(e.target.id === 'form-login') {
         const id = document.getElementById('login-id').value.trim(); const pw = document.getElementById('login-pw').value.trim();
         if(id === 'studycampus' && pw === 'studycampus26') { AppState.currentUser = { id: 'admin', name: '최고관리자', role: 'admin' }; localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); switchView('admin'); } 
@@ -400,14 +445,30 @@ document.body.addEventListener('submit', async (e) => {
         syncData(); showToast("결제 승인 청구가 완료되었습니다."); AppState.studentTab = 'mypage'; switchView('student');
     }
     else if(e.target.id === 'form-admin-student') {
-        const mode = AppState.adminModal.mode; const id = document.getElementById('mod-stu-id').value.trim(); const name = document.getElementById('mod-stu-name').value.trim(); const pw = document.getElementById('mod-stu-pw').value.trim(); const school = document.getElementById('mod-stu-school').value.trim(); const grade = document.getElementById('mod-stu-grade').value.trim(); const expiry = document.getElementById('mod-stu-expiry').value;
+        const mode = AppState.adminModal.mode; 
+        const id = document.getElementById('mod-stu-id').value.trim(); 
+        const name = document.getElementById('mod-stu-name').value.trim(); 
+        const pw = document.getElementById('mod-stu-pw').value.trim(); 
+        const school = document.getElementById('mod-stu-school').value.trim(); 
+        const grade = document.getElementById('mod-stu-grade').value.trim(); 
+        const expiry = document.getElementById('mod-stu-expiry').value;
+        const teacher = document.getElementById('mod-stu-teacher').value.trim();
+
         if(!AppState.data.users) AppState.data.users = [];
         if (mode === 'add') {
             if(AppState.data.users.some(u => u.id === id) || id === 'studycampus') return showToast("존재하는 아이디");
-            AppState.data.users.unshift({ id, name, pw, school, grade, role: 'student', active: true, xp: 0, ticketExpiry: expiry || '' }); showToast("추가 완료");
+            AppState.data.users.unshift({ id, name, pw, school, grade, teacher, role: 'student', active: true, xp: 0, ticketExpiry: expiry || '' }); showToast("추가 완료");
         } else if (mode === 'edit') {
             const userIdx = AppState.data.users.findIndex(u => u.id === AppState.adminModal.studentId);
-            if(userIdx > -1) { AppState.data.users[userIdx].name = name; AppState.data.users[userIdx].school = school; AppState.data.users[userIdx].grade = grade; AppState.data.users[userIdx].ticketExpiry = expiry || ''; if(pw) AppState.data.users[userIdx].pw = pw; } showToast("수정 완료");
+            if(userIdx > -1) { 
+                AppState.data.users[userIdx].name = name; 
+                AppState.data.users[userIdx].school = school; 
+                AppState.data.users[userIdx].grade = grade; 
+                AppState.data.users[userIdx].teacher = teacher; 
+                AppState.data.users[userIdx].ticketExpiry = expiry || ''; 
+                if(pw) AppState.data.users[userIdx].pw = pw; 
+            } 
+            showToast("수정 완료");
         }
         AppState.adminModal.isOpen = false; syncData(); renderAdminDashboard();
     }
@@ -438,10 +499,11 @@ document.body.addEventListener('submit', async (e) => {
     }
     else if(e.target.id === 'form-admin-system') {
         if(!AppState.data.settings) AppState.data.settings = {}; AppState.data.settings.dashBanner = document.getElementById('set-dash-banner').value;
-        AppState.data.settings.popup = { active: document.getElementById('set-pop-active').checked, tag: document.getElementById('set-pop-tag').value, title: document.getElementById('set-pop-title').value, desc: document.getElementById('set-pop-desc').value, b1Title: document.getElementById('set-pop-b1-t').value, b1Desc: document.getElementById('set-pop-b1-d').value, b2Title: document.getElementById('set-pop-b2-t').value, b2Desc: document.getElementById('set-pop-b2-d').value, btnUrl: document.getElementById('set-pop-btn-url').value }; syncData(); showToast("시스템 설정 저장됨!");
+        AppState.data.settings.popup = { active: document.getElementById('set-pop-active').checked, tag: document.getElementById('set-pop-tag').value, title: document.getElementById('set-pop-title').value, desc: document.getElementById('set-pop-desc').value, b1Title: document.getElementById('set-pop-b1-t').value, b1Desc: document.getElementById('set-pop-b1-d').value, b2Title: document.getElementById('set-pop-b2-t').value, b2Desc: document.getElementById('set-pop-b2-d').value, btnUrl: document.getElementById('set-pop-btn-url').value }; syncData(); showToast("설정 저장됨!");
     }
 });
 
+// 앱 시작 시 사용자 확인
 document.addEventListener('DOMContentLoaded', () => {
     try {
         const session = localStorage.getItem('studycampus_session');
