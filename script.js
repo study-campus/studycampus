@@ -41,7 +41,7 @@ function showToast(msg) {
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 function getCurrentWeekString(d = new Date()) { return `${d.getMonth() + 1}월 ${Math.ceil((d.getDate() - 1 + new Date(d.getFullYear(), d.getMonth(), 1).getDay() + 1) / 7)}주차`; }
 function clearLectureTimer() { if(AppState.lectureTimer) { clearInterval(AppState.lectureTimer); AppState.lectureTimer = null; } }
-function normalizeSchool(name) { let s = name.trim(); if(s.endsWith('고')) s += '등학교'; return s; }
+function normalizeSchool(name) { let s = name.trim(); if(s && s.endsWith('고')) s += '등학교'; return s; }
 
 // ------------------------- 파이어베이스 (실시간 동기화 오류 방어) -------------------------
 const dbRef = ref(db, 'studycampus_data');
@@ -50,12 +50,11 @@ onValue(dbRef, (snapshot) => {
     if (serverData) AppState.data = serverData;
     else set(dbRef, AppState.data);
 
-    // 🔥 사용자가 텍스트 입력 중일 때 화면이 강제로 리렌더링되어 작성 중이던 글이 날아가는 것을 방지합니다.
+    // 텍스트 입력 중 리렌더링 차단 (입력 데이터 증발 방어)
     const activeEl = document.activeElement;
     const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
     const isModalOpen = document.querySelector('.modal-overlay:not(.hidden)') !== null;
     
-    // 타이핑 중이거나 관리자 모달이 열려있지 않을 때만 화면 갱신 수행
     if (!isTyping && !isModalOpen) {
         renderLandingPage();
         renderCurrentView();
@@ -279,7 +278,7 @@ function renderStudentDashboard() {
     container.innerHTML = html;
 }
 
-// ------------------------- 관리자 렌더링 -------------------------
+// ------------------------- 관리자 대시보드 렌더링 -------------------------
 function renderAdminDashboard() {
     const container = document.getElementById('admin-dash-content');
     const tab = AppState.adminTab;
@@ -328,16 +327,17 @@ function renderAdminDashboard() {
     else if (tab === 'deploy') {
         html += `
             <div class="admin-card"><h2>📢 공지 배포 (모든 학생 알림)</h2><form id="form-admin-notice"><input type="text" id="adm-notice-title" class="admin-input" required placeholder="공지 제목"><textarea id="adm-notice-content" class="admin-input" style="height:100px; resize:none;" required placeholder="내용"></textarea><button type="submit" class="btn-primary">공지 올리기</button></form></div>
+            
             <div class="admin-card"><h2>📝 주간 과제 배포</h2><form id="form-admin-hw">
+                <select id="hw-target" class="admin-input"><option value="all">전체</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select>
                 <div style="display:flex; gap:10px;">
-                    <select id="hw-target" class="admin-input" style="margin:0;"><option value="all">전체</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select>
+                    <input type="text" id="hw-week" class="admin-input" value="1주차" required>
+                    <input type="date" id="hw-date" class="admin-input" required>
                 </div>
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <input type="text" id="hw-week" class="admin-input" value="1주차" required style="margin:0;">
-                    <input type="date" id="hw-date" class="admin-input" required style="margin:0;">
-                </div>
-                <textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px; margin-top:10px;"></textarea><button type="submit" class="btn-primary">배포</button>
+                <textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px;"></textarea>
+                <button type="submit" class="btn-primary">배포</button>
             </form></div>
+
             <div class="admin-card" style="grid-column:1/-1;"><h2>💻 동영상 강의 등록</h2><form id="form-admin-lec" style="display:flex; gap:10px;"><input type="text" id="lec-title" class="admin-input" placeholder="강의 제목" required style="margin:0;"><input type="url" id="lec-link" class="admin-input" placeholder="강의 URL" required style="margin:0;"><button type="submit" class="btn-primary" style="width:auto; padding:0 30px;">등록</button></form></div>
             <div class="admin-card" style="grid-column:1/-1;"><h2>📁 자료실 첨부자료 업로드</h2><form id="form-admin-material" style="display:grid; grid-template-columns:150px 1fr auto; gap:10px; align-items:start;"><select id="mat-cat" class="admin-input" style="margin:0;"><option value="공지">공지</option><option value="교재">교재</option></select><input type="text" id="mat-title" class="admin-input" placeholder="자료명 (제목)" required style="margin:0;"><input type="file" id="mat-file" class="admin-input" style="margin:0; padding:9px;"><textarea id="mat-desc" class="admin-input" placeholder="자료에 대한 간략한 설명" style="grid-column:1/-1; height:60px; resize:none; margin:0;"></textarea><button type="submit" class="btn-primary" style="grid-column:1/-1;">게시 및 파일 업로드</button></form></div>
             <div class="admin-card" style="grid-column:1/-1;"><h2>💬 학생 과제 제출함</h2>${(!data.hwSubmissions || data.hwSubmissions.length===0) ? '<p style="color:var(--text-muted); text-align:center;">제출된 숙제가 없습니다.</p>' : data.hwSubmissions.map(s => `<div style="border:1px solid var(--border); padding:20px; border-radius:12px; margin-bottom:15px; background:var(--bg-dark);"><div style="display:flex; justify-content:space-between; margin-bottom:15px;"><strong>👤 ${s.studentName} 학생 제출본</strong><span style="color:${s.status==='approved'?'#10b981':(s.status==='rejected'?'#ef4444':'#60a5fa')}">${s.status === 'approved' ? '승인완료' : (s.status === 'rejected' ? '반려됨' : '대기중')}</span></div><div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:15px; margin-bottom:15px; border-bottom:1px solid var(--border);">${s.files.map((f) => `<a href="${f.data}" download="${f.name}" style="background:#1e293b; padding:10px 15px; border-radius:8px; font-size:12px; font-weight:600; color:white; border:1px solid #334155; white-space:nowrap;">📄 ${f.name}</a>`).join('')}</div><div style="display:flex; gap:10px;">${s.status === 'pending' ? `<button class="btn-primary btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="approved">✅ 정답 승인</button><button class="btn-danger btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="rejected">❌ 반려 (재제출)</button>` : `<button class="btn-text btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="pending">상태 초기화</button>`}</div></div>`).join('')}</div>
@@ -345,6 +345,7 @@ function renderAdminDashboard() {
     }
     else if (tab === 'payments') {
         const paySet = set.payment || { pgUrl: "", bankInfo: "[하나은행] 342-910508-31507", opt1: "1개월-10만", opt2: "", opt3: "", opt4: "" };
+        
         html += `
         <div class="admin-card">
             <h2 style="color:#60a5fa; font-size:1.1rem; margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:15px;">결제 승인 대기 목록</h2>
@@ -418,16 +419,17 @@ function renderAdminDashboard() {
             <form id="form-admin-system" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;">
                     <h3 style="margin-bottom:15px; font-size:1rem; color:white;">학생 홈 상단 공지 배너</h3>
-                    <input type="text" id="set-dash-banner" class="admin-input" value="${set.dashBanner}">
+                    <input type="text" id="set-dash-banner" class="admin-input" value="${set.dashBanner}" placeholder="학생 로그인 시 홈 화면 상단에 띄울 문구">
                 </div>
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3 style="font-size:1rem; color:white;">학생 자동 팝업창 (모달)</h3><label style="color:var(--text-muted);"><input type="checkbox" id="set-pop-active" ${pop.active?'checked':''}> 활성화 켜기</label></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3 style="font-size:1rem; color:white;">학생 로그인 자동 팝업창 (모달)</h3><label style="color:var(--text-muted);"><input type="checkbox" id="set-pop-active" ${pop.active?'checked':''}> 활성화 켜기</label></div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                        <input type="text" id="set-pop-tag" class="admin-input" value="${pop.tag}"><input type="text" id="set-pop-title" class="admin-input" value="${pop.title}">
-                        <textarea id="set-pop-desc" class="admin-input" style="grid-column:1/-1; height:60px;">${pop.desc}</textarea>
-                        <div style="background:#1e293b; padding:15px; border-radius:8px;"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 (흰색)</h4><input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}"></div>
-                        <div style="background:#1e293b; padding:15px; border-radius:8px;"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 (어두운색)</h4><input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}"></div>
-                        <input type="text" id="set-pop-btn-url" class="admin-input" style="grid-column:1/-1;" value="${pop.btnUrl}">
+                        <input type="text" id="set-pop-tag" class="admin-input" value="${pop.tag}" placeholder="태그 문구 (예: 협업 피드백 이벤트)">
+                        <input type="text" id="set-pop-title" class="admin-input" value="${pop.title}" placeholder="큰 제목">
+                        <textarea id="set-pop-desc" class="admin-input" style="grid-column:1/-1; height:60px;" placeholder="서브 설명">${pop.desc}</textarea>
+                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 내용 (흰색)</h4><input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}" placeholder="박스 1 제목"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}" placeholder="박스 1 설명 (HTML 허용)"></div>
+                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 내용 (어두운색)</h4><input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}" placeholder="박스 2 제목"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}" placeholder="박스 2 설명"></div>
+                        <input type="text" id="set-pop-btn-url" class="admin-input" style="grid-column:1/-1;" value="${pop.btnUrl}" placeholder="버튼 이동 링크 (카카오톡 등)">
                     </div>
                 </div>
                 <button type="submit" class="btn-primary" style="grid-column:1/-1; padding:15px;">시스템 설정 저장</button>
@@ -440,7 +442,7 @@ function renderAdminDashboard() {
 }
 
 // =========================================================
-// [통합 이벤트 위임]
+// [통합 이벤트 위임] (클릭/입력 방어 100%)
 // =========================================================
 document.body.addEventListener('change', async (e) => {
     if (e.target.matches('input[type="file"]')) {
@@ -455,7 +457,7 @@ document.body.addEventListener('change', async (e) => {
             })));
             
             if (e.target.id === 'pay-req-file') {
-                e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료");
+                e.target.dataset.base64 = b64[0].data; showToast("✅ 사진이 첨부되었습니다.");
             } else if (e.target.dataset.hwid) {
                 if(!AppState.data.hwSubmissions) AppState.data.hwSubmissions = [];
                 AppState.data.hwSubmissions.push({ id: generateId(), hwId: e.target.dataset.hwid, studentId: AppState.currentUser.id, studentName: AppState.currentUser.name, files: b64, status: 'pending' });
@@ -524,7 +526,7 @@ document.body.addEventListener('click', (e) => {
             }
         }
         else if (action === 'delete-post') {
-            if(confirm("완전히 삭제하시겠습니까?")) {
+            if(confirm("이 게시물을 완전히 삭제하시겠습니까?")) {
                 AppState.data.community = AppState.data.community.filter(c => c.id !== actionNode.dataset.id);
                 if(AppState.activePostId === actionNode.dataset.id) AppState.activePostId = null;
                 syncData(); showToast("삭제되었습니다."); renderStudentDashboard();
@@ -580,9 +582,7 @@ document.body.addEventListener('click', (e) => {
     }
 });
 
-// =========================================================
-// [폼(Form) 이벤트 통제]
-// =========================================================
+// 폼(Form) 제출 (에러 방어막 최적화)
 document.body.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -600,7 +600,9 @@ document.body.addEventListener('submit', async (e) => {
             if(!AppState.data.users) AppState.data.users = [];
             if(AppState.data.users.some(u => u.id === id) || id === 'studycampus') return showToast("이미 존재하는 아이디입니다.");
             const d = new Date(); d.setDate(d.getDate() + 30);
+            
             const normalizedSchool = normalizeSchool(document.getElementById('reg-school').value);
+
             AppState.data.users.push({ id, name: document.getElementById('reg-name').value || id, pw: document.getElementById('reg-pw').value, school: normalizedSchool, grade: document.getElementById('reg-grade').value, role: 'student', active: true, xp: 0, ticketExpiry: d.toISOString().split('T')[0] });
             syncData(); showToast("가입 완료! 로그인 해주세요."); switchAuthMode('login');
         }
@@ -612,9 +614,13 @@ document.body.addEventListener('submit', async (e) => {
 
             const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
             if(userIdx > -1) { 
-                AppState.data.users[userIdx].name = name; AppState.data.users[userIdx].school = school; AppState.data.users[userIdx].grade = grade; 
+                AppState.data.users[userIdx].name = name; 
+                AppState.data.users[userIdx].school = school; 
+                AppState.data.users[userIdx].grade = grade; 
                 if(pw) AppState.data.users[userIdx].pw = pw; 
-                AppState.currentUser = AppState.data.users[userIdx]; localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser));
+                
+                AppState.currentUser = AppState.data.users[userIdx];
+                localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser));
             } 
             showToast("회원 정보가 수정되었습니다.");
             document.getElementById('modal-student-edit').classList.add('hidden');
@@ -642,11 +648,11 @@ document.body.addEventListener('submit', async (e) => {
             if(!AppState.data.users) AppState.data.users = [];
             if (mode === 'add') {
                 if(AppState.data.users.some(u => u.id === id) || id === 'studycampus') return showToast("존재하는 아이디입니다.");
-                AppState.data.users.unshift({ id, name, pw, school, grade, teacher, role: 'student', active: true, xp: 0, ticketExpiry: expiry || '' }); showToast("원생이 추가되었습니다.");
+                AppState.data.users.unshift({ id, name, pw, school, grade, teacher, role: 'student', active: true, xp: 0, ticketExpiry: expiry || '' }); showToast("추가 완료");
             } else if (mode === 'edit') {
                 const userIdx = AppState.data.users.findIndex(u => u.id === AppState.adminModal.studentId);
                 if(userIdx > -1) { AppState.data.users[userIdx].name = name; AppState.data.users[userIdx].school = school; AppState.data.users[userIdx].grade = grade; AppState.data.users[userIdx].teacher = teacher; AppState.data.users[userIdx].ticketExpiry = expiry || ''; if(pw) AppState.data.users[userIdx].pw = pw; } 
-                showToast("정보가 수정되었습니다.");
+                showToast("수정 완료");
             }
             AppState.adminModal.isOpen = false; syncData(); renderAdminDashboard();
         }
@@ -664,13 +670,26 @@ document.body.addEventListener('submit', async (e) => {
             if (file) { if(file.size > 2 * 1024 * 1024) return showToast('⚠️ 2MB 이하만 가능'); showToast("업로드 중..."); fileData = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); }); fileName = file.name; }
             if(!AppState.data.materials) AppState.data.materials = []; AppState.data.materials.unshift({ id: generateId(), category: document.getElementById('mat-cat').value, title: document.getElementById('mat-title').value, desc: document.getElementById('mat-desc').value, fileData, fileName }); syncData(); showToast("업로드 완료"); e.target.reset();
         }
+        // 🔥 숙제 제출 날짜 버그 완벽 방어 
         else if(e.target.id === 'form-admin-hw') {
-            if(!AppState.data.homework) AppState.data.homework = []; const tVal = document.getElementById('hw-target').value;
-            AppState.data.homework.unshift({ id: generateId(), target: tVal, type: tVal === 'all' ? 'all' : 'individual', week: document.getElementById('hw-week').value, date: document.getElementById('hw-date').value, day: document.getElementById('hw-day').value, desc: document.getElementById('hw-desc').value });
-            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: "📝 신규 숙제 배포", content: `${document.getElementById('hw-week').value} 숙제 알림`, date: new Date().toISOString() }); syncData(); showToast("배포 완료"); e.target.reset();
+            if(!AppState.data.homework) AppState.data.homework = []; 
+            const tVal = document.getElementById('hw-target').value;
+            const hwDate = document.getElementById('hw-date').value;
+            const weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+            const dayString = hwDate ? weekDays[new Date(hwDate).getDay()] : '';
+            
+            AppState.data.homework.unshift({ 
+                id: generateId(), target: tVal, type: tVal === 'all' ? 'all' : 'individual', 
+                week: document.getElementById('hw-week').value, 
+                date: hwDate, day: dayString, desc: document.getElementById('hw-desc').value 
+            });
+            
+            if(!AppState.data.notices) AppState.data.notices = []; 
+            AppState.data.notices.unshift({ id: generateId(), title: "📝 신규 숙제 배포", content: `${document.getElementById('hw-week').value} 과제 알림`, date: new Date().toISOString() }); 
+            syncData(); showToast("배포 완료"); e.target.reset();
         }
         else if(e.target.id === 'form-admin-notice') {
-            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: document.getElementById('adm-notice-title').value, content: document.getElementById('adm-notice-content').value, date: new Date().toISOString() }); syncData(); showToast("공지 완료"); e.target.reset();
+            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: document.getElementById('adm-notice-title').value, content: document.getElementById('adm-notice-content').value, date: new Date().toISOString() }); syncData(); showToast("공지 배포 완료"); e.target.reset();
         }
         else if(e.target.id === 'form-admin-lec') {
             if(!AppState.data.lectures) AppState.data.lectures = []; AppState.data.lectures.push({ id: generateId(), title: document.getElementById('lec-title').value, link: document.getElementById('lec-link').value }); syncData(); showToast("강의 등록 완료"); e.target.reset();
@@ -700,7 +719,7 @@ document.body.addEventListener('submit', async (e) => {
     }
 });
 
-// 앱 시작
+// 앱 시작 시 사용자 세션 유지
 document.addEventListener('DOMContentLoaded', () => {
     try {
         const session = localStorage.getItem('studycampus_session');
