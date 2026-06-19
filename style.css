@@ -62,7 +62,6 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .auth-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: white; padding: 16px; border-radius: 12px; margin-bottom: 15px; font-size: 1rem; outline: none; transition: 0.2s; box-sizing: border-box; }
 .auth-input:focus { border-color: var(--primary); }
 .auth-submit { width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 12px; margin-top: 10px; display: block; text-align: center; box-sizing: border-box; }
-.auth-footer { text-align: center; margin-top: 25px; font-size: 0.9rem; color: white; font-weight: 600; padding: 10px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 12px;}
 
 /* 학생 앱 UI */
 .stu-wrapper { flex: 1; display: flex; flex-direction: column; width: 100%; }
@@ -95,7 +94,7 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .notif-item { padding: 15px; border-bottom: 1px solid #334155; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: 0.2s; }
 .notif-item:hover { background: #334155; }
 
-/* 모달 시스템 통합 */
+/* 모달 시스템 */
 .auto-popup-overlay, .modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.7); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); opacity:1; transition:0.3s;}
 .auto-popup-overlay.hidden, .modal-overlay.hidden { display: none !important; opacity:0; pointer-events: none;}
 .auto-popup-card, .modal-content { background: #1c2438; border: 1px solid #334155; border-radius: 16px; width: 95%; max-width: 420px; padding: 30px 25px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;}
@@ -118,6 +117,15 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .comment-list { max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
 .comment-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
 
+/* 🔥 새 강의 플레이어 전용 그리드 레이아웃 */
+.lecture-player-grid { display: grid; grid-template-columns: 2.5fr 1fr; gap: 20px; height: 100%; align-items: start;}
+.player-playlist { background: var(--bg-dark); border-left: 1px solid var(--border); padding-left: 20px; height: calc(100vh - 100px); overflow-y: auto;}
+.player-playlist::-webkit-scrollbar { width: 6px; }
+.player-playlist::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+.playlist-item { padding: 15px; border-radius: 12px; border: 1px solid transparent; cursor: pointer; margin-bottom: 10px; display: flex; gap: 15px; align-items: center; transition: 0.2s;}
+.playlist-item:hover { background: #1e293b; }
+.playlist-item.active { background: rgba(37, 99, 235, 0.1); border-color: #3b82f6; }
+
 /* 관리자 대시보드 */
 .admin-wrapper { flex: 1; display: flex; flex-direction: column; width: 100%; background: #0f172a; }
 .admin-top-bar { background: #10b981; color: white; font-size: 12px; font-weight: 700; text-align: center; padding: 6px; }
@@ -134,7 +142,6 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .admin-table { width: 100%; border-collapse: collapse; min-width: 500px;}
 .admin-table th, .admin-table td { padding: 14px 12px; border-bottom: 1px solid var(--border); text-align: left; }
 .admin-input { width: 100%; background: #0f172a; border: 1px solid #334155; color: white; padding: 14px 16px; border-radius: 8px; margin-bottom: 12px; outline: none; transition: 0.2s;}
-
 .admin-label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; font-weight: 600; }
 
 /* 카카오톡 및 토스트 */
@@ -144,6 +151,11 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 @keyframes toastFadeInOut { 0% { opacity:0; transform:translateY(20px); } 15% { opacity:1; transform:translateY(0); } 85% { opacity:1; transform:translateY(0); } 100% { opacity:0; transform:translateY(20px); } }
 
 /* 🔥 모바일 반응형 완벽 보장 */
+@media (max-width: 900px) {
+    .lecture-player-grid { grid-template-columns: 1fr; }
+    .player-playlist { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 20px; height: auto;}
+}
+
 @media (max-width: 768px) {
     .global-header { padding: 15px 20px; }
     .nav-center { display: none; }
