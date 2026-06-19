@@ -62,6 +62,7 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .auth-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: white; padding: 16px; border-radius: 12px; margin-bottom: 15px; font-size: 1rem; outline: none; transition: 0.2s; box-sizing: border-box; }
 .auth-input:focus { border-color: var(--primary); }
 .auth-submit { width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 12px; margin-top: 10px; display: block; text-align: center; box-sizing: border-box; }
+.auth-footer { text-align: center; margin-top: 25px; font-size: 0.9rem; color: white; font-weight: 600; padding: 10px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 12px;}
 
 /* 학생 앱 UI */
 .stu-wrapper { flex: 1; display: flex; flex-direction: column; width: 100%; }
@@ -94,7 +95,7 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .notif-item { padding: 15px; border-bottom: 1px solid #334155; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: 0.2s; }
 .notif-item:hover { background: #334155; }
 
-/* 모달 시스템 (공통) */
+/* 모달 시스템 통합 */
 .auto-popup-overlay, .modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.7); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); opacity:1; transition:0.3s;}
 .auto-popup-overlay.hidden, .modal-overlay.hidden { display: none !important; opacity:0; pointer-events: none;}
 .auto-popup-card, .modal-content { background: #1c2438; border: 1px solid #334155; border-radius: 16px; width: 95%; max-width: 420px; padding: 30px 25px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;}
@@ -134,7 +135,6 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .admin-table th, .admin-table td { padding: 14px 12px; border-bottom: 1px solid var(--border); text-align: left; }
 .admin-input { width: 100%; background: #0f172a; border: 1px solid #334155; color: white; padding: 14px 16px; border-radius: 8px; margin-bottom: 12px; outline: none; transition: 0.2s;}
 
-/* 🔥 [추가] 관리자 설정용 라벨 디자인 */
 .admin-label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; font-weight: 600; }
 
 /* 카카오톡 및 토스트 */
