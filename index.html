@@ -158,7 +158,7 @@
                     <input type="text" id="stu-edit-name" class="auth-input" required placeholder="실명">
                     <input type="password" id="stu-edit-pw" class="auth-input" placeholder="새 비밀번호 (변경 시에만 입력)">
                     <div style="display:flex; gap:10px;">
-                        <input type="text" id="stu-edit-school" class="auth-input" placeholder="학교명">
+                        <input type="text" id="stu-edit-school" class="auth-input" placeholder="학교명 (예: 대화고)">
                         <select id="stu-edit-grade" class="auth-input" style="color:white; font-weight:bold;">
                             <option value="중1">중1</option><option value="중2">중2</option><option value="중3">중3</option>
                             <option value="고1">고1</option><option value="고2">고2</option><option value="고3">고3</option>
@@ -179,11 +179,9 @@
         <main class="stu-main">
             <div class="stu-card" style="background:#1e293b;">
                 <h3 style="margin-bottom:20px; color:white; font-size:1.1rem; display:flex; align-items:center; gap:8px;">💳 수강권 결제하기</h3>
-                
                 <div id="payment-pg-area" class="hidden" style="margin-bottom: 20px;">
                     <button id="btn-pg-link" class="btn-primary btn-block" style="background:#2563eb; font-size:1.05rem;">신용카드/간편결제 (PG)</button>
                 </div>
-                
                 <hr style="border:0; border-top:1px solid #334155; margin-bottom:20px;">
                 <h3 style="margin-bottom:15px; color:white; font-size:1.1rem; display:flex; align-items:center; gap:8px;">🏦 무통장 입금 안내</h3>
                 <div id="payment-bank-info" style="background:#2e3153; padding:18px; border-radius:8px; border:1px solid #4338ca; color:#a5b4fc; font-weight:700; font-size:1.05rem; letter-spacing:0.5px; word-break: break-all;"></div>
@@ -194,16 +192,12 @@
                 <form id="form-payment-request">
                     <p style="font-size:13px; color:#94a3b8; margin-bottom:6px;">학생명</p>
                     <input type="text" id="pay-req-name" class="auth-input" style="margin-bottom:20px; background:#0f172a; cursor:not-allowed;" readonly>
-                    
                     <p style="font-size:13px; color:#94a3b8; margin-bottom:6px;">전화번호</p>
                     <input type="tel" id="pay-req-phone" class="auth-input" style="margin-bottom:20px; background:#0f172a;" required placeholder="010-0000-0000">
-                    
                     <p style="font-size:13px; color:#94a3b8; margin-bottom:6px;">수강권/옵션 선택</p>
                     <select id="pay-req-item" class="auth-input" style="margin-bottom:20px; background:#0f172a;"></select>
-                    
                     <p style="font-size:13px; color:#94a3b8; margin-bottom:6px;">결제(입금) 증명 첨부사진</p>
                     <input type="file" id="pay-req-file" class="auth-input" accept="image/*" required style="padding:12px; background:#0f172a; margin-bottom:25px;">
-                    
                     <button type="submit" class="btn-primary btn-block" style="background:#4f46e5; border-radius:8px; font-size:1.1rem; padding:16px;">요청서 제출하기</button>
                 </form>
             </div>
