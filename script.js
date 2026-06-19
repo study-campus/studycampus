@@ -32,6 +32,7 @@ const AppState = {
     aiModal: { isOpen: false, studentId: null }
 };
 
+// ------------------------- 유틸리티 -------------------------
 function showToast(msg) {
     const c = document.getElementById('toast-container');
     const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
@@ -42,20 +43,19 @@ function getCurrentWeekString(d = new Date()) { return `${d.getMonth() + 1}월 $
 function clearLectureTimer() { if(AppState.lectureTimer) { clearInterval(AppState.lectureTimer); AppState.lectureTimer = null; } }
 function normalizeSchool(name) { let s = name.trim(); if(s.endsWith('고')) s += '등학교'; return s; }
 
-// ==========================================
-// 파이어베이스 (실시간 동기화 방어 로직)
-// ==========================================
+// ------------------------- 파이어베이스 (실시간 동기화 오류 방어) -------------------------
 const dbRef = ref(db, 'studycampus_data');
 onValue(dbRef, (snapshot) => {
     const serverData = snapshot.val();
     if (serverData) AppState.data = serverData;
     else set(dbRef, AppState.data);
 
-    // 🔥 입력창 포커스 중이거나 팝업이 떠있을 때는 렌더링을 차단하여 작성 글 증발 방지
+    // 🔥 사용자가 텍스트 입력 중일 때 화면이 강제로 리렌더링되어 작성 중이던 글이 날아가는 것을 방지합니다.
     const activeEl = document.activeElement;
     const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
     const isModalOpen = document.querySelector('.modal-overlay:not(.hidden)') !== null;
     
+    // 타이핑 중이거나 관리자 모달이 열려있지 않을 때만 화면 갱신 수행
     if (!isTyping && !isModalOpen) {
         renderLandingPage();
         renderCurrentView();
@@ -64,6 +64,7 @@ onValue(dbRef, (snapshot) => {
 
 function syncData() { set(dbRef, AppState.data); }
 
+// ------------------------- 라우팅 -------------------------
 function switchView(viewName) {
     clearLectureTimer(); 
     AppState.activeLecture = null;
@@ -106,7 +107,6 @@ function renderCurrentView() {
     else if (AppState.currentView === 'payment' && AppState.currentUser) renderPaymentCenter();
 }
 
-// 🔥 [완벽 수정됨] 데이터가 없을 경우 undefined를 띄우지 않고 깔끔하게 '' 빈 문자열로 처리
 function renderLandingPage() {
     const ld = { ...DEFAULT_STATE.landing, ...(AppState.data.landing || {}) };
     document.getElementById('ld-hero-sub').textContent = ld.heroSub || ''; 
@@ -116,13 +116,10 @@ function renderLandingPage() {
     document.getElementById('ld-s2-n').textContent = ld.s2Num || ''; document.getElementById('ld-s2-t').textContent = ld.s2Txt || ''; 
     document.getElementById('ld-s3-n').textContent = ld.s3Num || ''; document.getElementById('ld-s3-t').textContent = ld.s3Txt || '';
     document.getElementById('ld-sec-title').textContent = ld.secTitle || '';
-    
     document.getElementById('ld-f1-b').textContent = ld.f1Badge || ''; document.getElementById('ld-f1-b').className = 'badge-' + (ld.f1Col || 'blue'); 
     document.getElementById('ld-f1-t').textContent = ld.f1Title || ''; document.getElementById('ld-f1-d').textContent = ld.f1Desc || ''; document.getElementById('ld-f1-e').textContent = ld.f1Emoji || '';
-    
     document.getElementById('ld-f2-b').textContent = ld.f2Badge || ''; document.getElementById('ld-f2-b').className = 'badge-' + (ld.f2Col || 'red'); 
     document.getElementById('ld-f2-t').textContent = ld.f2Title || ''; document.getElementById('ld-f2-d').textContent = ld.f2Desc || ''; document.getElementById('ld-f2-e').textContent = ld.f2Emoji || '';
-    
     document.getElementById('ld-bot-title').textContent = ld.botTitle || '';
 }
 
@@ -282,7 +279,7 @@ function renderStudentDashboard() {
     container.innerHTML = html;
 }
 
-// ------------------------- 관리자 대시보드 렌더링 -------------------------
+// ------------------------- 관리자 렌더링 -------------------------
 function renderAdminDashboard() {
     const container = document.getElementById('admin-dash-content');
     const tab = AppState.adminTab;
@@ -308,7 +305,7 @@ function renderAdminDashboard() {
                         <input type="text" id="mod-stu-id" class="admin-input" placeholder="아이디" required value="${stu.id || ''}" ${mode === 'edit' ? 'disabled' : ''}>
                         <input type="password" id="mod-stu-pw" class="admin-input" placeholder="${mode === 'edit' ? '비밀번호 (변경 시에만 입력)' : '초기 비밀번호'}" ${mode === 'add' ? 'required' : ''}>
                         <div style="display:flex; gap:10px;">
-                            <input type="text" id="mod-stu-school" class="admin-input" placeholder="학교명 (예: 대화고)" value="${stu.school || ''}">
+                            <input type="text" id="mod-stu-school" class="admin-input" placeholder="학교명 (예: 대화고)" value="${stu.school ? stu.school.replace('등학교','') : ''}">
                             <select id="mod-stu-grade" class="admin-input" style="color:white;">
                                 <option value="중1" ${stu.grade==='중1'?'selected':''}>중1</option><option value="중2" ${stu.grade==='중2'?'selected':''}>중2</option><option value="중3" ${stu.grade==='중3'?'selected':''}>중3</option>
                                 <option value="고1" ${stu.grade==='고1'?'selected':''}>고1</option><option value="고2" ${stu.grade==='고2'?'selected':''}>고2</option><option value="고3" ${stu.grade==='고3'?'selected':''}>고3</option>
@@ -331,105 +328,86 @@ function renderAdminDashboard() {
     else if (tab === 'deploy') {
         html += `
             <div class="admin-card"><h2>📢 공지 배포 (모든 학생 알림)</h2><form id="form-admin-notice"><input type="text" id="adm-notice-title" class="admin-input" required placeholder="공지 제목"><textarea id="adm-notice-content" class="admin-input" style="height:100px; resize:none;" required placeholder="내용"></textarea><button type="submit" class="btn-primary">공지 올리기</button></form></div>
-            <div class="admin-card"><h2>📝 주간 과제 배포</h2><form id="form-admin-hw"><select id="hw-target" class="admin-input"><option value="all">전체</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select><div style="display:flex; gap:10px;"><input type="text" id="hw-week" class="admin-input" value="1주차" required><input type="date" id="hw-date" class="admin-input" required></div><textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px;"></textarea><button type="submit" class="btn-primary">배포</button></form></div>
+            <div class="admin-card"><h2>📝 주간 과제 배포</h2><form id="form-admin-hw">
+                <div style="display:flex; gap:10px;">
+                    <select id="hw-target" class="admin-input" style="margin:0;"><option value="all">전체</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <input type="text" id="hw-week" class="admin-input" value="1주차" required style="margin:0;">
+                    <input type="date" id="hw-date" class="admin-input" required style="margin:0;">
+                </div>
+                <textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px; margin-top:10px;"></textarea><button type="submit" class="btn-primary">배포</button>
+            </form></div>
             <div class="admin-card" style="grid-column:1/-1;"><h2>💻 동영상 강의 등록</h2><form id="form-admin-lec" style="display:flex; gap:10px;"><input type="text" id="lec-title" class="admin-input" placeholder="강의 제목" required style="margin:0;"><input type="url" id="lec-link" class="admin-input" placeholder="강의 URL" required style="margin:0;"><button type="submit" class="btn-primary" style="width:auto; padding:0 30px;">등록</button></form></div>
             <div class="admin-card" style="grid-column:1/-1;"><h2>📁 자료실 첨부자료 업로드</h2><form id="form-admin-material" style="display:grid; grid-template-columns:150px 1fr auto; gap:10px; align-items:start;"><select id="mat-cat" class="admin-input" style="margin:0;"><option value="공지">공지</option><option value="교재">교재</option></select><input type="text" id="mat-title" class="admin-input" placeholder="자료명 (제목)" required style="margin:0;"><input type="file" id="mat-file" class="admin-input" style="margin:0; padding:9px;"><textarea id="mat-desc" class="admin-input" placeholder="자료에 대한 간략한 설명" style="grid-column:1/-1; height:60px; resize:none; margin:0;"></textarea><button type="submit" class="btn-primary" style="grid-column:1/-1;">게시 및 파일 업로드</button></form></div>
-            <div class="admin-card" style="grid-column:1/-1;"><h2>💬 학생 과제 제출함</h2>${(!data.hwSubmissions || data.hwSubmissions.length===0) ? '<p style="color:var(--text-muted); text-align:center;">제출된 숙제가 없습니다.</p>' : data.hwSubmissions.map(s => `<div style="border:1px solid var(--border); padding:20px; border-radius:12px; margin-bottom:15px; background:var(--bg-dark);"><div style="display:flex; justify-content:space-between; margin-bottom:15px;"><strong>👤 ${s.studentName} 학생 제출본</strong><span style="color:${s.status==='approved'?'#10b981':(s.status==='rejected'?'#ef4444':'#60a5fa')}">${s.status === 'approved' ? '승인' : (s.status === 'rejected' ? '반려' : '대기중')}</span></div><div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:15px; margin-bottom:15px; border-bottom:1px solid var(--border);">${s.files.map((f) => `<a href="${f.data}" download="${f.name}" style="background:#1e293b; padding:10px 15px; border-radius:8px; font-size:12px; font-weight:600; color:white; border:1px solid #334155; white-space:nowrap;">📄 ${f.name}</a>`).join('')}</div><div style="display:flex; gap:10px;">${s.status === 'pending' ? `<button class="btn-primary btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="approved">✅ 승인</button><button class="btn-primary btn-sm" style="background:#ef4444;" data-action="review-hw" data-subid="${s.id}" data-status="rejected">❌ 반려</button>` : `<button class="btn-text btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="pending">상태 초기화</button>`}</div></div>`).join('')}</div>
+            <div class="admin-card" style="grid-column:1/-1;"><h2>💬 학생 과제 제출함</h2>${(!data.hwSubmissions || data.hwSubmissions.length===0) ? '<p style="color:var(--text-muted); text-align:center;">제출된 숙제가 없습니다.</p>' : data.hwSubmissions.map(s => `<div style="border:1px solid var(--border); padding:20px; border-radius:12px; margin-bottom:15px; background:var(--bg-dark);"><div style="display:flex; justify-content:space-between; margin-bottom:15px;"><strong>👤 ${s.studentName} 학생 제출본</strong><span style="color:${s.status==='approved'?'#10b981':(s.status==='rejected'?'#ef4444':'#60a5fa')}">${s.status === 'approved' ? '승인완료' : (s.status === 'rejected' ? '반려됨' : '대기중')}</span></div><div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:15px; margin-bottom:15px; border-bottom:1px solid var(--border);">${s.files.map((f) => `<a href="${f.data}" download="${f.name}" style="background:#1e293b; padding:10px 15px; border-radius:8px; font-size:12px; font-weight:600; color:white; border:1px solid #334155; white-space:nowrap;">📄 ${f.name}</a>`).join('')}</div><div style="display:flex; gap:10px;">${s.status === 'pending' ? `<button class="btn-primary btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="approved">✅ 정답 승인</button><button class="btn-danger btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="rejected">❌ 반려 (재제출)</button>` : `<button class="btn-text btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="pending">상태 초기화</button>`}</div></div>`).join('')}</div>
         `;
     }
     else if (tab === 'payments') {
         const paySet = set.payment || { pgUrl: "", bankInfo: "[하나은행] 342-910508-31507", opt1: "1개월-10만", opt2: "", opt3: "", opt4: "" };
-        html += `<div class="admin-card">
+        html += `
+        <div class="admin-card">
             <h2 style="color:#60a5fa; font-size:1.1rem; margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:15px;">결제 승인 대기 목록</h2>
-            <div class="table-responsive"><table class="admin-table" style="margin-top:10px;"><thead><tr><th>학생명(ID)</th><th>요청 상품</th><th>증명사진</th><th>상태</th></tr></thead><tbody>`;
+            <div class="table-responsive"><table class="admin-table" style="margin-top:10px;">
+                <thead><tr><th>학생명(ID)</th><th>요청 상품</th><th>증명사진</th><th>상태</th></tr></thead>
+                <tbody>`;
         if(!data.payments || data.payments.length===0) html += `<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">요청없음</td></tr>`;
         else data.payments.forEach(p => html += `<tr><td><strong>${p.userName}</strong><br><span style="font-size:12px; color:var(--text-muted);">${p.userId}</span></td><td>${p.item}</td><td><a href="${p.image}" target="_blank" style="color:#60a5fa; text-decoration:underline; font-size:13px;">사진 보기</a></td><td>${p.status === '승인대기' ? `<button class="btn-primary btn-sm" data-action="approve-payment" data-id="${p.id}">결제 승인</button>` : `<span style="color:#10b981; font-weight:bold;">승인완료</span>`}</td></tr>`);
-        html += `</tbody></table></div></div>
+        html += `</tbody></table></div></div>`;
+
+        html += `
         <div class="admin-card">
             <h2 style="color:#60a5fa; font-size:1.1rem; margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:15px;">⚙️ 결제 연동 설정</h2>
             <form id="form-admin-payment-settings">
-                <p style="font-size:12px; color:var(--text-muted); margin-bottom:5px;">PG 링크 URL</p><input type="text" id="pay-set-pg" class="admin-input" value="${paySet.pgUrl}">
-                <p style="font-size:12px; color:var(--text-muted); margin-bottom:5px; margin-top:10px;">무통장 계좌 안내</p><input type="text" id="pay-set-bank" class="admin-input" value="${paySet.bankInfo}">
+                <p class="admin-label">PG 링크 URL</p><input type="text" id="pay-set-pg" class="admin-input" value="${paySet.pgUrl}">
+                <p class="admin-label" style="margin-top:10px;">무통장 계좌 안내</p><input type="text" id="pay-set-bank" class="admin-input" value="${paySet.bankInfo}">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
-                    <input type="text" id="pay-set-opt1" class="admin-input" value="${paySet.opt1}" placeholder="옵션1"><input type="text" id="pay-set-opt2" class="admin-input" value="${paySet.opt2}" placeholder="옵션2"><input type="text" id="pay-set-opt3" class="admin-input" value="${paySet.opt3}" placeholder="옵션3"><input type="text" id="pay-set-opt4" class="admin-input" value="${paySet.opt4}" placeholder="옵션4">
+                    <input type="text" id="pay-set-opt1" class="admin-input" value="${paySet.opt1}" placeholder="옵션1">
+                    <input type="text" id="pay-set-opt2" class="admin-input" value="${paySet.opt2}" placeholder="옵션2">
+                    <input type="text" id="pay-set-opt3" class="admin-input" value="${paySet.opt3}" placeholder="옵션3">
+                    <input type="text" id="pay-set-opt4" class="admin-input" value="${paySet.opt4}" placeholder="옵션4">
                 </div>
-                <button type="submit" class="btn-primary" style="width:100%; margin-top:20px; background:#1e293b; color:white; border:1px solid #334155;">결제 설정 즉시 적용</button>
+                <button type="submit" class="btn-primary" style="width:100%; margin-top:20px; background:#1e293b; border:1px solid #334155;">결제 설정 즉시 적용</button>
             </form>
         </div>`;
     }
     else if (tab === 'settings') {
         const pop = set.popup;
-        // 🔥 [완벽 반영] 누락 및 오류를 완전히 해결한 명확한 Label 적용 홈페이지 에디터
         html += `
         <div class="admin-card" style="grid-column:1/-1;">
             <h2 style="margin-bottom:20px; color:#60a5fa;">🌐 랜딩(홈페이지) 실시간 편집</h2>
             <form id="form-admin-settings" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px;">
                     <h3 style="margin-bottom:15px; font-size:1rem;">1. 메인 배너 (최상단)</h3>
-                    <label class="admin-label">작은 소제목 (파란색 배경 위)</label>
-                    <input type="text" id="set-h-sub" class="admin-input" value="${ld.heroSub || ''}" placeholder="STUDY CAMPUS LEARNING SYSTEM">
-                    
-                    <label class="admin-label">메인 큰 제목 (줄바꿈은 엔터키 적용)</label>
-                    <textarea id="set-h-tit" class="admin-input" style="height:70px;" placeholder="성적 향상의 해답...">${(ld.heroTitle || '').replace(/<br>/g, '\n')}</textarea>
-                    
-                    <label class="admin-label">제목 아래 간략한 설명</label>
-                    <input type="text" id="set-h-desc" class="admin-input" value="${ld.heroDesc || ''}" placeholder="1:1 관리 시스템">
+                    <label class="admin-label">작은 소제목</label><input type="text" id="set-h-sub" class="admin-input" value="${ld.heroSub || ''}">
+                    <label class="admin-label">메인 큰 제목</label><textarea id="set-h-tit" class="admin-input" style="height:70px;">${(ld.heroTitle || '').replace(/<br>/g, '\n')}</textarea>
+                    <label class="admin-label">제목 아래 간략한 설명</label><input type="text" id="set-h-desc" class="admin-input" value="${ld.heroDesc || ''}">
                 </div>
-
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px;">
-                    <h3 style="margin-bottom:15px; font-size:1rem;">2. 통계 지표 (메인 배너 하단)</h3>
-                    <label class="admin-label">통계 1 (숫자 / 설명)</label>
-                    <div style="display:flex; gap:10px;"><input type="text" id="set-s1-n" class="admin-input" value="${ld.s1Num || ''}" placeholder="260"><input type="text" id="set-s1-t" class="admin-input" value="${ld.s1Txt || ''}" placeholder="수강"></div>
-                    <label class="admin-label">통계 2 (숫자 / 설명)</label>
-                    <div style="display:flex; gap:10px;"><input type="text" id="set-s2-n" class="admin-input" value="${ld.s2Num || ''}" placeholder="2등급"><input type="text" id="set-s2-t" class="admin-input" value="${ld.s2Txt || ''}" placeholder="상승"></div>
-                    <label class="admin-label">통계 3 (숫자 / 설명)</label>
-                    <div style="display:flex; gap:10px;"><input type="text" id="set-s3-n" class="admin-input" value="${ld.s3Num || ''}" placeholder="98점"><input type="text" id="set-s3-t" class="admin-input" value="${ld.s3Txt || ''}" placeholder="수능"></div>
+                    <h3 style="margin-bottom:15px; font-size:1rem;">2. 통계 지표</h3>
+                    <label class="admin-label">통계 1 (수치/설명)</label><div style="display:flex; gap:10px;"><input type="text" id="set-s1-n" class="admin-input" value="${ld.s1Num || ''}"><input type="text" id="set-s1-t" class="admin-input" value="${ld.s1Txt || ''}"></div>
+                    <label class="admin-label">통계 2 (수치/설명)</label><div style="display:flex; gap:10px;"><input type="text" id="set-s2-n" class="admin-input" value="${ld.s2Num || ''}"><input type="text" id="set-s2-t" class="admin-input" value="${ld.s2Txt || ''}"></div>
+                    <label class="admin-label">통계 3 (수치/설명)</label><div style="display:flex; gap:10px;"><input type="text" id="set-s3-n" class="admin-input" value="${ld.s3Num || ''}"><input type="text" id="set-s3-t" class="admin-input" value="${ld.s3Txt || ''}"></div>
                 </div>
-
                 <div style="grid-column:1/-1;">
-                    <label class="admin-label">중앙 섹션 전체 제목</label>
-                    <input type="text" id="set-sec-tit" class="admin-input" value="${ld.secTitle || ''}" placeholder="왜 StudyCampus 인가요?" style="margin:0;">
+                    <label class="admin-label">중앙 섹션 전체 제목</label><input type="text" id="set-sec-tit" class="admin-input" value="${ld.secTitle || ''}" style="margin:0;">
                 </div>
-
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px;">
                     <h3 style="margin-bottom:15px; font-size:1rem;">3. 특징 섹션 (왼쪽)</h3>
-                    <label class="admin-label">꼬리표 텍스트 / 색상</label>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="set-f1-b" class="admin-input" value="${ld.f1Badge || ''}" placeholder="문제">
-                        <select id="set-f1-c" class="admin-input">
-                            <option value="red" ${ld.f1Col==='red'?'selected':''}>빨강</option><option value="blue" ${ld.f1Col==='blue'?'selected':''}>파랑</option><option value="green" ${ld.f1Col==='green'?'selected':''}>초록</option>
-                        </select>
-                    </div>
-                    <label class="admin-label">카드 큰 제목</label>
-                    <input type="text" id="set-f1-t" class="admin-input" value="${ld.f1Title || ''}" placeholder="성적이 안 오르는 이유">
-                    <label class="admin-label">카드 세부 설명</label>
-                    <input type="text" id="set-f1-d" class="admin-input" value="${ld.f1Desc || ''}" placeholder="일방적인 강의 시청...">
-                    <label class="admin-label">우측 이모지</label>
-                    <input type="text" id="set-f1-e" class="admin-input" value="${ld.f1Emoji || ''}" placeholder="😫">
+                    <label class="admin-label">꼬리표 텍스트 / 색상</label><div style="display:flex; gap:10px;"><input type="text" id="set-f1-b" class="admin-input" value="${ld.f1Badge || ''}"><select id="set-f1-c" class="admin-input"><option value="red" ${ld.f1Col==='red'?'selected':''}>빨강</option><option value="blue" ${ld.f1Col==='blue'?'selected':''}>파랑</option><option value="green" ${ld.f1Col==='green'?'selected':''}>초록</option></select></div>
+                    <label class="admin-label">카드 큰 제목</label><input type="text" id="set-f1-t" class="admin-input" value="${ld.f1Title || ''}">
+                    <label class="admin-label">카드 세부 설명</label><input type="text" id="set-f1-d" class="admin-input" value="${ld.f1Desc || ''}">
+                    <label class="admin-label">우측 이모지</label><input type="text" id="set-f1-e" class="admin-input" value="${ld.f1Emoji || ''}">
                 </div>
-
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px;">
                     <h3 style="margin-bottom:15px; font-size:1rem;">4. 특징 섹션 (오른쪽)</h3>
-                    <label class="admin-label">꼬리표 텍스트 / 색상</label>
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="set-f2-b" class="admin-input" value="${ld.f2Badge || ''}" placeholder="해결">
-                        <select id="set-f2-c" class="admin-input">
-                            <option value="red" ${ld.f2Col==='red'?'selected':''}>빨강</option><option value="blue" ${ld.f2Col==='blue'?'selected':''}>파랑</option><option value="green" ${ld.f2Col==='green'?'selected':''}>초록</option>
-                        </select>
-                    </div>
-                    <label class="admin-label">카드 큰 제목</label>
-                    <input type="text" id="set-f2-t" class="admin-input" value="${ld.f2Title || ''}" placeholder="체계적인 온라인 밀착 관리">
-                    <label class="admin-label">카드 세부 설명</label>
-                    <input type="text" id="set-f2-d" class="admin-input" value="${ld.f2Desc || ''}" placeholder="누구나 포기하지 않고...">
-                    <label class="admin-label">우측 이모지</label>
-                    <input type="text" id="set-f2-e" class="admin-input" value="${ld.f2Emoji || ''}" placeholder="💡">
+                    <label class="admin-label">꼬리표 텍스트 / 색상</label><div style="display:flex; gap:10px;"><input type="text" id="set-f2-b" class="admin-input" value="${ld.f2Badge || ''}"><select id="set-f2-c" class="admin-input"><option value="red" ${ld.f2Col==='red'?'selected':''}>빨강</option><option value="blue" ${ld.f2Col==='blue'?'selected':''}>파랑</option><option value="green" ${ld.f2Col==='green'?'selected':''}>초록</option></select></div>
+                    <label class="admin-label">카드 큰 제목</label><input type="text" id="set-f2-t" class="admin-input" value="${ld.f2Title || ''}">
+                    <label class="admin-label">카드 세부 설명</label><input type="text" id="set-f2-d" class="admin-input" value="${ld.f2Desc || ''}">
+                    <label class="admin-label">우측 이모지</label><input type="text" id="set-f2-e" class="admin-input" value="${ld.f2Emoji || ''}">
                 </div>
-
                 <div style="grid-column:1/-1; background:var(--bg-dark); padding:20px; border-radius:12px;">
-                    <h3 style="margin-bottom:15px; font-size:1rem;">5. 맨 아래쪽 중앙 파란색 CTA 배너</h3>
-                    <label class="admin-label">배너 중앙 큰 글씨</label>
-                    <input type="text" id="set-b-tit" class="admin-input" value="${ld.botTitle || ''}" placeholder="지금 StudyCampus와 시작하세요" style="margin:0;">
+                    <h3 style="margin-bottom:15px; font-size:1rem;">5. 하단 CTA 배너</h3><input type="text" id="set-b-tit" class="admin-input" value="${ld.botTitle || ''}" style="margin:0;">
                 </div>
                 <button type="submit" class="btn-primary" style="grid-column:1/-1; padding:15px; font-size:1.1rem;">홈페이지 저장 및 실시간 반영</button>
             </form>
@@ -440,17 +418,16 @@ function renderAdminDashboard() {
             <form id="form-admin-system" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;">
                     <h3 style="margin-bottom:15px; font-size:1rem; color:white;">학생 홈 상단 공지 배너</h3>
-                    <input type="text" id="set-dash-banner" class="admin-input" value="${set.dashBanner}" placeholder="학생 로그인 시 홈 화면 상단에 띄울 문구">
+                    <input type="text" id="set-dash-banner" class="admin-input" value="${set.dashBanner}">
                 </div>
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3 style="font-size:1rem; color:white;">학생 로그인 자동 팝업창 (모달)</h3><label style="color:var(--text-muted);"><input type="checkbox" id="set-pop-active" ${pop.active?'checked':''}> 활성화</label></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3 style="font-size:1rem; color:white;">학생 자동 팝업창 (모달)</h3><label style="color:var(--text-muted);"><input type="checkbox" id="set-pop-active" ${pop.active?'checked':''}> 활성화 켜기</label></div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
-                        <input type="text" id="set-pop-tag" class="admin-input" value="${pop.tag}" placeholder="태그 문구 (예: 협업 피드백 이벤트)">
-                        <input type="text" id="set-pop-title" class="admin-input" value="${pop.title}" placeholder="큰 제목">
-                        <textarea id="set-pop-desc" class="admin-input" style="grid-column:1/-1; height:60px;" placeholder="서브 설명">${pop.desc}</textarea>
-                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 (흰색)</h4><input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}"></div>
-                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 (어두운색)</h4><input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}"></div>
-                        <input type="text" id="set-pop-btn-url" class="admin-input" style="grid-column:1/-1;" value="${pop.btnUrl}" placeholder="버튼 이동 링크 (카카오톡 등)">
+                        <input type="text" id="set-pop-tag" class="admin-input" value="${pop.tag}"><input type="text" id="set-pop-title" class="admin-input" value="${pop.title}">
+                        <textarea id="set-pop-desc" class="admin-input" style="grid-column:1/-1; height:60px;">${pop.desc}</textarea>
+                        <div style="background:#1e293b; padding:15px; border-radius:8px;"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 (흰색)</h4><input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}"></div>
+                        <div style="background:#1e293b; padding:15px; border-radius:8px;"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 (어두운색)</h4><input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}"></div>
+                        <input type="text" id="set-pop-btn-url" class="admin-input" style="grid-column:1/-1;" value="${pop.btnUrl}">
                     </div>
                 </div>
                 <button type="submit" class="btn-primary" style="grid-column:1/-1; padding:15px;">시스템 설정 저장</button>
@@ -478,7 +455,7 @@ document.body.addEventListener('change', async (e) => {
             })));
             
             if (e.target.id === 'pay-req-file') {
-                e.target.dataset.base64 = b64[0].data; showToast("✅ 사진이 첨부되었습니다.");
+                e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료");
             } else if (e.target.dataset.hwid) {
                 if(!AppState.data.hwSubmissions) AppState.data.hwSubmissions = [];
                 AppState.data.hwSubmissions.push({ id: generateId(), hwId: e.target.dataset.hwid, studentId: AppState.currentUser.id, studentName: AppState.currentUser.name, files: b64, status: 'pending' });
@@ -489,259 +466,241 @@ document.body.addEventListener('change', async (e) => {
 });
 
 document.body.addEventListener('click', (e) => {
-    const actionNode = e.target.closest('[data-action]');
-    if (!actionNode) return;
-    const action = actionNode.dataset.action;
+    try {
+        const actionNode = e.target.closest('[data-action]');
+        if (!actionNode) return;
+        const action = actionNode.dataset.action;
 
-    if (action === 'nav') switchView(actionNode.dataset.target);
-    else if (action === 'auth-toggle') {
-        if(AppState.currentUser) { AppState.currentUser = null; localStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); }
-        else { switchView('auth'); switchAuthMode('login'); }
-    }
-    else if (action === 'auth-register') {
-        if (AppState.currentUser) switchView(AppState.currentUser.role === 'admin' ? 'admin' : 'student');
-        else { switchView('auth'); switchAuthMode('register'); }
-    }
-    else if (action === 'switch-auth') switchAuthMode(actionNode.dataset.mode);
-    else if (action === 'switch-admin-tab') { AppState.adminTab = actionNode.dataset.tab; renderAdminDashboard(); }
-    else if (action === 'switch-student-tab') { 
-        clearLectureTimer(); AppState.studentTab = actionNode.dataset.tab; renderStudentDashboard(); 
-    }
-    else if (action === 'back-to-mypage') { AppState.studentTab = 'mypage'; switchView('student'); }
-    
-    // 학생
-    else if (action === 'open-student-edit') {
-        const me = AppState.data.users.find(u => u.id === AppState.currentUser.id) || AppState.currentUser;
-        document.getElementById('stu-edit-name').value = me.name || ''; 
-        document.getElementById('stu-edit-school').value = me.school ? me.school.replace('등학교','') : ''; 
-        document.getElementById('stu-edit-grade').value = me.grade || '고2'; document.getElementById('stu-edit-pw').value = '';
-        document.getElementById('modal-student-edit').classList.remove('hidden');
-    }
-    else if (action === 'close-student-edit') { document.getElementById('modal-student-edit').classList.add('hidden'); }
-    else if (action === 'toggle-notif') { 
-        const drop = document.getElementById('notif-dropdown'); 
-        if(drop) {
-            drop.classList.toggle('hidden'); 
-            if(!drop.classList.contains('hidden')) { 
-                let upd = false; 
-                (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }}); 
-                if(upd) syncData(); document.getElementById('notif-badge').classList.add('hidden'); 
-            } 
+        if (action === 'nav') switchView(actionNode.dataset.target);
+        else if (action === 'auth-toggle') {
+            if(AppState.currentUser) { AppState.currentUser = null; localStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); }
+            else { switchView('auth'); switchAuthMode('login'); }
         }
-    }
-    else if (action === 'close-popup') { document.getElementById('student-auto-popup').classList.add('hidden'); sessionStorage.setItem('studycampus_popup_shown', 'true'); }
-    else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 띄우지 않습니다."); }
-    else if (action === 'change-week') { 
-        const dir = parseInt(actionNode.dataset.dir);
-        let newWeek = AppState.currentHwWeekNumber + dir;
-        if (newWeek < 1) newWeek = 1; AppState.currentHwWeekNumber = newWeek; renderStudentDashboard();
-    }
-    else if (action === 'set-mat-cat') { AppState.materialCategory = actionNode.dataset.cat; renderStudentDashboard(); }
-    else if (action === 'open-post') { AppState.activePostId = actionNode.dataset.id; renderStudentDashboard(); }
-    else if (action === 'close-post') { AppState.activePostId = null; renderStudentDashboard(); }
-    else if (action === 'edit-post') {
-        const post = AppState.data.community.find(c => c.id === actionNode.dataset.id);
-        if(post) {
-            const newText = prompt("게시물 내용을 수정하세요:", post.content);
-            if(newText !== null && newText.trim() !== "") {
-                post.content = newText.trim();
-                syncData(); showToast("게시물이 수정되었습니다."); renderStudentDashboard();
+        else if (action === 'auth-register') {
+            if (AppState.currentUser) switchView(AppState.currentUser.role === 'admin' ? 'admin' : 'student');
+            else { switchView('auth'); switchAuthMode('register'); }
+        }
+        else if (action === 'switch-auth') switchAuthMode(actionNode.dataset.mode);
+        else if (action === 'switch-admin-tab') { AppState.adminTab = actionNode.dataset.tab; renderAdminDashboard(); }
+        else if (action === 'switch-student-tab') { 
+            clearLectureTimer(); AppState.studentTab = actionNode.dataset.tab; renderStudentDashboard(); 
+        }
+        else if (action === 'back-to-mypage') { AppState.studentTab = 'mypage'; switchView('student'); }
+        
+        else if (action === 'open-student-edit') {
+            const me = AppState.data.users.find(u => u.id === AppState.currentUser.id) || AppState.currentUser;
+            document.getElementById('stu-edit-name').value = me.name || ''; 
+            document.getElementById('stu-edit-school').value = me.school ? me.school.replace('등학교','') : ''; 
+            document.getElementById('stu-edit-grade').value = me.grade || '고2'; document.getElementById('stu-edit-pw').value = '';
+            document.getElementById('modal-student-edit').classList.remove('hidden');
+        }
+        else if (action === 'close-student-edit') { document.getElementById('modal-student-edit').classList.add('hidden'); }
+        else if (action === 'toggle-notif') { 
+            const drop = document.getElementById('notif-dropdown'); 
+            if(drop) {
+                drop.classList.toggle('hidden'); 
+                if(!drop.classList.contains('hidden')) { 
+                    let upd = false; 
+                    (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }}); 
+                    if(upd) syncData(); document.getElementById('notif-badge').classList.add('hidden'); 
+                } 
             }
         }
-    }
-    else if (action === 'delete-post') {
-        if(confirm("이 게시물을 완전히 삭제하시겠습니까?")) {
-            AppState.data.community = AppState.data.community.filter(c => c.id !== actionNode.dataset.id);
-            if(AppState.activePostId === actionNode.dataset.id) AppState.activePostId = null;
-            syncData(); showToast("게시물이 삭제되었습니다."); renderStudentDashboard();
+        else if (action === 'close-popup') { document.getElementById('student-auto-popup').classList.add('hidden'); sessionStorage.setItem('studycampus_popup_shown', 'true'); }
+        else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 띄우지 않습니다."); }
+        else if (action === 'change-week') { 
+            const dir = parseInt(actionNode.dataset.dir);
+            let newWeek = AppState.currentHwWeekNumber + dir;
+            if (newWeek < 1) newWeek = 1; AppState.currentHwWeekNumber = newWeek; renderStudentDashboard();
         }
-    }
-    else if (action === 'toggle-like') {
-        const post = AppState.data.community.find(c => c.id === actionNode.dataset.id);
-        if(post) { if(!post.likes) post.likes = []; const meId = AppState.currentUser.id; const idx = post.likes.indexOf(meId); if(idx > -1) post.likes.splice(idx, 1); else post.likes.push(meId); syncData(); }
-    }
-    else if (action === 'open-lecture') { AppState.activeLecture = AppState.data.lectures.find(l => l.id === actionNode.dataset.id); renderStudentDashboard(); }
-    else if (action === 'close-lecture') { clearLectureTimer(); renderStudentDashboard(); }
-    else if (action === 'play-video') {
-        clearLectureTimer();
-        const lecId = AppState.activeLecture.id;
-        const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
-        if(!AppState.data.users[userIdx].lectureProgress) AppState.data.users[userIdx].lectureProgress = {};
-        
-        let prog = AppState.data.users[userIdx].lectureProgress[lecId]?.percent || 0;
-        actionNode.innerHTML = '⏸️'; showToast("수강 기록 시작됨");
-        
-        AppState.lectureTimer = setInterval(() => {
-            prog += 5; 
-            if (prog >= 90) { prog = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 90% 달성 완료!"); } 
-            else { AppState.data.users[userIdx].lectureProgress[lecId] = { percent: prog, done: false }; }
+        else if (action === 'set-mat-cat') { AppState.materialCategory = actionNode.dataset.cat; renderStudentDashboard(); }
+        else if (action === 'open-post') { AppState.activePostId = actionNode.dataset.id; renderStudentDashboard(); }
+        else if (action === 'close-post') { AppState.activePostId = null; renderStudentDashboard(); }
+        else if (action === 'edit-post') {
+            const post = AppState.data.community.find(c => c.id === actionNode.dataset.id);
+            if(post) {
+                const newText = prompt("게시물 내용을 수정하세요:", post.content);
+                if(newText !== null && newText.trim() !== "") { post.content = newText.trim(); syncData(); showToast("수정되었습니다."); renderStudentDashboard(); }
+            }
+        }
+        else if (action === 'delete-post') {
+            if(confirm("완전히 삭제하시겠습니까?")) {
+                AppState.data.community = AppState.data.community.filter(c => c.id !== actionNode.dataset.id);
+                if(AppState.activePostId === actionNode.dataset.id) AppState.activePostId = null;
+                syncData(); showToast("삭제되었습니다."); renderStudentDashboard();
+            }
+        }
+        else if (action === 'toggle-like') {
+            const post = AppState.data.community.find(c => c.id === actionNode.dataset.id);
+            if(post) { if(!post.likes) post.likes = []; const meId = AppState.currentUser.id; const idx = post.likes.indexOf(meId); if(idx > -1) post.likes.splice(idx, 1); else post.likes.push(meId); syncData(); }
+        }
+        else if (action === 'open-lecture') { AppState.activeLecture = AppState.data.lectures.find(l => l.id === actionNode.dataset.id); renderStudentDashboard(); }
+        else if (action === 'close-lecture') { clearLectureTimer(); renderStudentDashboard(); }
+        else if (action === 'play-video') {
+            clearLectureTimer();
+            const lecId = AppState.activeLecture.id; const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
+            if(!AppState.data.users[userIdx].lectureProgress) AppState.data.users[userIdx].lectureProgress = {};
+            let prog = AppState.data.users[userIdx].lectureProgress[lecId]?.percent || 0;
+            actionNode.innerHTML = '⏸️'; showToast("수강 기록 시작됨");
             
-            const bar = document.getElementById('live-progress-bar'); const txt = document.getElementById('live-progress-text');
-            if(bar) bar.style.width = prog + '%'; if(txt) txt.textContent = prog + '%';
-        }, 1000);
-    }
-    else if (action === 'trigger-file') { const fi = document.getElementById(`hw-file-${actionNode.dataset.id}`); if(fi) fi.click(); }
-    else if (action === 'cancel-hw') { AppState.data.hwSubmissions = AppState.data.hwSubmissions.filter(s => s.id !== actionNode.dataset.subid); syncData(); showToast("기존 제출본 삭제됨"); }
-    else if (action === 'delete-account') { if(confirm("탈퇴하시겠습니까? (데이터 삭제)")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); localStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
-    
-    // 관리자
-    else if (action === 'toggle-user') { const user = AppState.data.users.find(u => String(u.id) === String(actionNode.dataset.id)); if(user) user.active = !user.active; syncData(); showToast("상태가 변경되었습니다."); }
-    else if (action === 'delete-user') { if(confirm("정말 삭제할까요?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== actionNode.dataset.id); syncData(); showToast("삭제되었습니다."); renderAdminDashboard(); } }
-    else if (action === 'open-admin-modal') { AppState.adminModal = { isOpen: true, mode: actionNode.dataset.mode, studentId: actionNode.dataset.id || null }; renderAdminDashboard(); }
-    else if (action === 'close-admin-modal') { AppState.adminModal.isOpen = false; renderAdminDashboard(); }
-    else if (action === 'review-hw') { const sub = AppState.data.hwSubmissions.find(s => s.id === actionNode.dataset.subid); if(sub) { sub.status = actionNode.dataset.status; syncData(); showToast("검사 상태 변경됨"); } }
-    else if (action === 'approve-payment') { const p = AppState.data.payments.find(p => p.id === actionNode.dataset.id); if(p) { p.status = '승인완료'; syncData(); showToast("결제가 승인되었습니다!"); } }
-    else if (action === 'open-ai-modal') { AppState.aiModal = { isOpen: true, studentId: actionNode.dataset.id }; document.getElementById('modal-ai-report').classList.remove('hidden'); document.getElementById('ai-report-textarea').value = ''; }
-    else if (action === 'close-ai-modal') { AppState.aiModal.isOpen = false; document.getElementById('modal-ai-report').classList.add('hidden'); }
-    else if (action === 'generate-ai-text') {
-        const sid = AppState.aiModal.studentId; const student = AppState.data.users.find(u => u.id === sid); const hwCount = (AppState.data.hwSubmissions||[]).filter(s => s.studentId === sid && s.status === 'approved').length; const lecCount = Object.values(student.lectureProgress||{}).filter(p => p.done).length;
-        document.getElementById('ai-report-textarea').value = `[AI 주간 분석 리포트]\n\n${student.name} 학생의 주간 분석 결과입니다.\n- 완료 과제: ${hwCount}건\n- 수강 완료 강의: ${lecCount}건\n\n성실한 태도로 학습에 성실히 응하고 있습니다. 다음 주에도 열정을 이어가길 응원합니다!`;
-    }
-    else if (action === 'send-ai-report') {
-        const text = document.getElementById('ai-report-textarea').value; if(!text) return showToast("내용을 작성해주세요.");
-        if(!AppState.data.reports) AppState.data.reports = []; if(!AppState.data.alerts) AppState.data.alerts = [];
-        AppState.data.reports.unshift({ id: generateId(), studentId: AppState.aiModal.studentId, content: text, date: new Date().toISOString().split('T')[0] });
-        AppState.data.alerts.unshift({ id: generateId(), studentId: AppState.aiModal.studentId, title: "주간 분석 리포트 도착", content: "새로운 리포트가 등록되었습니다.", read: false, date: new Date().toISOString().split('T')[0] });
-        syncData(); showToast("성공적으로 발송되었습니다!"); document.querySelector('[data-action="close-ai-modal"]').click();
+            AppState.lectureTimer = setInterval(() => {
+                prog += 5; 
+                if (prog >= 90) { prog = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 90% 달성 완료!"); } 
+                else { AppState.data.users[userIdx].lectureProgress[lecId] = { percent: prog, done: false }; }
+                const bar = document.getElementById('live-progress-bar'); const txt = document.getElementById('live-progress-text');
+                if(bar) bar.style.width = prog + '%'; if(txt) txt.textContent = prog + '%';
+            }, 1000);
+        }
+        else if (action === 'trigger-file') { const fi = document.getElementById(`hw-file-${actionNode.dataset.id}`); if(fi) fi.click(); }
+        else if (action === 'cancel-hw') { AppState.data.hwSubmissions = AppState.data.hwSubmissions.filter(s => s.id !== actionNode.dataset.subid); syncData(); showToast("기존 제출본 삭제됨"); }
+        else if (action === 'delete-account') { if(confirm("탈퇴하시겠습니까? (데이터 삭제)")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); localStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
+        
+        // 관리자
+        else if (action === 'toggle-user') { const user = AppState.data.users.find(u => String(u.id) === String(actionNode.dataset.id)); if(user) user.active = !user.active; syncData(); showToast("상태가 변경되었습니다."); }
+        else if (action === 'delete-user') { if(confirm("정말 삭제할까요?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== actionNode.dataset.id); syncData(); showToast("삭제되었습니다."); renderAdminDashboard(); } }
+        else if (action === 'open-admin-modal') { AppState.adminModal = { isOpen: true, mode: actionNode.dataset.mode, studentId: actionNode.dataset.id || null }; renderAdminDashboard(); }
+        else if (action === 'close-admin-modal') { AppState.adminModal.isOpen = false; renderAdminDashboard(); }
+        else if (action === 'review-hw') { const sub = AppState.data.hwSubmissions.find(s => s.id === actionNode.dataset.subid); if(sub) { sub.status = actionNode.dataset.status; syncData(); showToast("검사 상태 변경됨"); } }
+        else if (action === 'approve-payment') { const p = AppState.data.payments.find(p => p.id === actionNode.dataset.id); if(p) { p.status = '승인완료'; syncData(); showToast("결제가 승인되었습니다!"); } }
+        else if (action === 'open-ai-modal') { AppState.aiModal = { isOpen: true, studentId: actionNode.dataset.id }; document.getElementById('modal-ai-report').classList.remove('hidden'); document.getElementById('ai-report-textarea').value = ''; }
+        else if (action === 'close-ai-modal') { AppState.aiModal.isOpen = false; document.getElementById('modal-ai-report').classList.add('hidden'); }
+        else if (action === 'generate-ai-text') {
+            const sid = AppState.aiModal.studentId; const student = AppState.data.users.find(u => u.id === sid); const hwCount = (AppState.data.hwSubmissions||[]).filter(s => s.studentId === sid && s.status === 'approved').length; const lecCount = Object.values(student.lectureProgress||{}).filter(p => p.done).length;
+            document.getElementById('ai-report-textarea').value = `[AI 주간 분석 리포트]\n\n${student.name} 학생의 주간 분석 결과입니다.\n- 완료 과제: ${hwCount}건\n- 수강 완료 강의: ${lecCount}건\n\n성실한 태도로 학습에 성실히 응하고 있습니다. 다음 주에도 열정을 이어가길 응원합니다!`;
+        }
+        else if (action === 'send-ai-report') {
+            const text = document.getElementById('ai-report-textarea').value; if(!text) return showToast("내용을 작성해주세요.");
+            if(!AppState.data.reports) AppState.data.reports = []; if(!AppState.data.alerts) AppState.data.alerts = [];
+            AppState.data.reports.unshift({ id: generateId(), studentId: AppState.aiModal.studentId, content: text, date: new Date().toISOString().split('T')[0] });
+            AppState.data.alerts.unshift({ id: generateId(), studentId: AppState.aiModal.studentId, title: "주간 분석 리포트 도착", content: "새로운 리포트가 등록되었습니다.", read: false, date: new Date().toISOString().split('T')[0] });
+            syncData(); showToast("성공적으로 발송되었습니다!"); document.querySelector('[data-action="close-ai-modal"]').click();
+        }
+    } catch(err) {
+        console.error("클릭 이벤트 오류:", err);
     }
 });
 
-// 폼(Form) 제출 이벤트
+// =========================================================
+// [폼(Form) 이벤트 통제]
+// =========================================================
 document.body.addEventListener('submit', async (e) => {
     e.preventDefault();
-    if(e.target.id === 'form-login') {
-        const id = document.getElementById('login-id').value.trim(); const pw = document.getElementById('login-pw').value.trim();
-        if(id === 'studycampus' && pw === 'studycampus26') { AppState.currentUser = { id: 'admin', name: '최고관리자', role: 'admin' }; localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); switchView('admin'); } 
-        else {
-            const user = (AppState.data.users||[]).find(u => u.id === id);
-            if(user && user.active && (!user.pw || user.pw === pw)) { AppState.currentUser = user; localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); sessionStorage.removeItem('studycampus_popup_shown'); switchView('student'); } 
-            else showToast("계정 정보나 비밀번호를 확인해주세요.");
+    try {
+        if(e.target.id === 'form-login') {
+            const id = document.getElementById('login-id').value.trim(); const pw = document.getElementById('login-pw').value.trim();
+            if(id === 'studycampus' && pw === 'studycampus26') { AppState.currentUser = { id: 'admin', name: '최고관리자', role: 'admin' }; localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); switchView('admin'); } 
+            else {
+                const user = (AppState.data.users||[]).find(u => u.id === id);
+                if(user && user.active && (!user.pw || user.pw === pw)) { AppState.currentUser = user; localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); sessionStorage.removeItem('studycampus_popup_shown'); switchView('student'); } 
+                else showToast("계정 정보나 비밀번호를 확인해주세요.");
+            }
         }
-    }
-    else if(e.target.id === 'form-register') {
-        const id = document.getElementById('reg-id').value.trim();
-        if(!AppState.data.users) AppState.data.users = [];
-        if(AppState.data.users.some(u => u.id === id) || id === 'studycampus') return showToast("이미 존재하는 아이디입니다.");
-        const d = new Date(); d.setDate(d.getDate() + 30);
-        
-        // 🔥 입력된 학교명을 정규화하여 저장
-        const normalizedSchool = normalizeSchool(document.getElementById('reg-school').value);
+        else if(e.target.id === 'form-register') {
+            const id = document.getElementById('reg-id').value.trim();
+            if(!AppState.data.users) AppState.data.users = [];
+            if(AppState.data.users.some(u => u.id === id) || id === 'studycampus') return showToast("이미 존재하는 아이디입니다.");
+            const d = new Date(); d.setDate(d.getDate() + 30);
+            const normalizedSchool = normalizeSchool(document.getElementById('reg-school').value);
+            AppState.data.users.push({ id, name: document.getElementById('reg-name').value || id, pw: document.getElementById('reg-pw').value, school: normalizedSchool, grade: document.getElementById('reg-grade').value, role: 'student', active: true, xp: 0, ticketExpiry: d.toISOString().split('T')[0] });
+            syncData(); showToast("가입 완료! 로그인 해주세요."); switchAuthMode('login');
+        }
+        else if(e.target.id === 'form-student-edit') {
+            const name = document.getElementById('stu-edit-name').value.trim();
+            const pw = document.getElementById('stu-edit-pw').value.trim();
+            const school = normalizeSchool(document.getElementById('stu-edit-school').value);
+            const grade = document.getElementById('stu-edit-grade').value.trim();
 
-        AppState.data.users.push({ id, name: document.getElementById('reg-name').value || id, pw: document.getElementById('reg-pw').value, school: normalizedSchool, grade: document.getElementById('reg-grade').value, role: 'student', active: true, xp: 0, ticketExpiry: d.toISOString().split('T')[0] });
-        syncData(); showToast("가입 완료! 로그인 해주세요."); switchAuthMode('login');
-    }
-    else if(e.target.id === 'form-student-edit') {
-        const name = document.getElementById('stu-edit-name').value.trim();
-        const pw = document.getElementById('stu-edit-pw').value.trim();
-        const school = normalizeSchool(document.getElementById('stu-edit-school').value);
-        const grade = document.getElementById('stu-edit-grade').value.trim();
-
-        const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
-        if(userIdx > -1) { 
-            AppState.data.users[userIdx].name = name; 
-            AppState.data.users[userIdx].school = school; 
-            AppState.data.users[userIdx].grade = grade; 
-            if(pw) AppState.data.users[userIdx].pw = pw; 
-            
-            AppState.currentUser = AppState.data.users[userIdx];
-            localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser));
-        } 
-        showToast("회원 정보가 수정되었습니다.");
-        document.getElementById('modal-student-edit').classList.add('hidden');
-        syncData(); renderCurrentView();
-    }
-    else if(e.target.id === 'form-payment-request') {
-        const fileInput = document.getElementById('pay-req-file'); const b64 = fileInput.dataset.base64; if(!b64) return showToast("사진을 첨부해주세요.");
-        if(!AppState.data.payments) AppState.data.payments = [];
-        AppState.data.payments.unshift({ id: generateId(), userId: AppState.currentUser.id, userName: AppState.currentUser.name, phone: document.getElementById('pay-req-phone').value, item: document.getElementById('pay-req-item').value, amount: "별도", image: b64, status: '승인대기', date: new Date().toISOString().split('T')[0] });
-        syncData(); showToast("결제 승인 요청 전송됨"); AppState.studentTab = 'mypage'; switchView('student'); e.target.reset();
-    }
-    else if(e.target.id === 'form-admin-payment-settings') {
-        if(!AppState.data.settings) AppState.data.settings = {};
-        AppState.data.settings.payment = {
-            pgUrl: document.getElementById('pay-set-pg').value,
-            bankInfo: document.getElementById('pay-set-bank').value,
-            opt1: document.getElementById('pay-set-opt1').value,
-            opt2: document.getElementById('pay-set-opt2').value,
-            opt3: document.getElementById('pay-set-opt3').value,
-            opt4: document.getElementById('pay-set-opt4').value
-        };
-        syncData(); showToast("결제 설정이 즉시 반영되었습니다.");
-    }
-    else if(e.target.id === 'form-admin-student') {
-        const mode = AppState.adminModal.mode; 
-        const id = document.getElementById('mod-stu-id').value.trim(); 
-        const name = document.getElementById('mod-stu-name').value.trim(); 
-        const pw = document.getElementById('mod-stu-pw').value.trim(); 
-        const school = normalizeSchool(document.getElementById('mod-stu-school').value); 
-        const grade = document.getElementById('mod-stu-grade').value.trim(); 
-        const expiry = document.getElementById('mod-stu-expiry').value;
-        const teacher = document.getElementById('mod-stu-teacher').value.trim();
-
-        if(!AppState.data.users) AppState.data.users = [];
-        if (mode === 'add') {
-            if(AppState.data.users.some(u => u.id === id) || id === 'studycampus') return showToast("존재하는 아이디입니다.");
-            AppState.data.users.unshift({ id, name, pw, school, grade, teacher, role: 'student', active: true, xp: 0, ticketExpiry: expiry || '' }); showToast("원생이 추가되었습니다.");
-        } else if (mode === 'edit') {
-            const userIdx = AppState.data.users.findIndex(u => u.id === AppState.adminModal.studentId);
+            const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
             if(userIdx > -1) { 
-                AppState.data.users[userIdx].name = name; AppState.data.users[userIdx].school = school; AppState.data.users[userIdx].grade = grade; AppState.data.users[userIdx].teacher = teacher; AppState.data.users[userIdx].ticketExpiry = expiry || ''; 
+                AppState.data.users[userIdx].name = name; AppState.data.users[userIdx].school = school; AppState.data.users[userIdx].grade = grade; 
                 if(pw) AppState.data.users[userIdx].pw = pw; 
+                AppState.currentUser = AppState.data.users[userIdx]; localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser));
             } 
-            showToast("정보가 수정되었습니다.");
+            showToast("회원 정보가 수정되었습니다.");
+            document.getElementById('modal-student-edit').classList.add('hidden');
+            syncData(); renderCurrentView();
         }
-        AppState.adminModal.isOpen = false; syncData(); renderAdminDashboard();
-    }
-    else if(e.target.id === 'form-community') {
-        if (!AppState.data.community) AppState.data.community = [];
-        AppState.data.community.unshift({ id: generateId(), authorId: AppState.currentUser.id, author: AppState.currentUser.name, content: document.getElementById('comm-text').value, date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }), likes: [], comments: [] });
-        syncData(); showToast("게시물이 등록되었습니다."); e.target.reset();
-    }
-    else if(e.target.id === 'form-comment') {
-        const post = AppState.data.community.find(c => c.id === AppState.activePostId); if(!post.comments) post.comments = [];
-        post.comments.push({ id: generateId(), author: AppState.currentUser.name, content: document.getElementById('comment-text').value, date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }); syncData(); showToast("댓글 작성됨"); document.getElementById('comment-text').value = '';
-    }
-    else if(e.target.id === 'form-admin-material') {
-        const fileInput = document.getElementById('mat-file'); const file = fileInput.files[0]; let fileData = null; let fileName = '';
-        if (file) { if(file.size > 2 * 1024 * 1024) return showToast('⚠️ 2MB 이하만 가능'); showToast("업로드 중..."); fileData = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); }); fileName = file.name; }
-        if(!AppState.data.materials) AppState.data.materials = []; AppState.data.materials.unshift({ id: generateId(), category: document.getElementById('mat-cat').value, title: document.getElementById('mat-title').value, desc: document.getElementById('mat-desc').value, fileData, fileName }); syncData(); showToast("업로드 완료"); e.target.reset();
-    }
-    else if(e.target.id === 'form-admin-hw') {
-        if(!AppState.data.homework) AppState.data.homework = []; const tVal = document.getElementById('hw-target').value;
-        AppState.data.homework.unshift({ id: generateId(), target: tVal, type: tVal === 'all' ? 'all' : 'individual', week: document.getElementById('hw-week').value, date: document.getElementById('hw-date').value, day: document.getElementById('hw-day').value, desc: document.getElementById('hw-desc').value });
-        if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: "📝 신규 숙제 배포", content: `${document.getElementById('hw-week').value} 숙제 알림`, date: new Date().toISOString() }); syncData(); showToast("배포 완료"); e.target.reset();
-    }
-    else if(e.target.id === 'form-admin-notice') {
-        if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: document.getElementById('adm-notice-title').value, content: document.getElementById('adm-notice-content').value, date: new Date().toISOString() }); syncData(); showToast("공지 배포 완료"); e.target.reset();
-    }
-    else if(e.target.id === 'form-admin-lec') {
-        if(!AppState.data.lectures) AppState.data.lectures = []; AppState.data.lectures.push({ id: generateId(), title: document.getElementById('lec-title').value, link: document.getElementById('lec-link').value }); syncData(); showToast("강의 등록 완료"); e.target.reset();
-    }
-    else if(e.target.id === 'form-admin-system' || e.target.id === 'form-admin-settings') {
-        if(!AppState.data.settings) AppState.data.settings = {};
-        
-        // 1. 팝업 / 시스템 설정 저장
-        if(e.target.id === 'form-admin-system') {
-            AppState.data.settings.dashBanner = document.getElementById('set-dash-banner').value;
-            AppState.data.settings.popup = { active: document.getElementById('set-pop-active').checked, tag: document.getElementById('set-pop-tag').value, title: document.getElementById('set-pop-title').value, desc: document.getElementById('set-pop-desc').value, b1Title: document.getElementById('set-pop-b1-t').value, b1Desc: document.getElementById('set-pop-b1-d').value, b2Title: document.getElementById('set-pop-b2-t').value, b2Desc: document.getElementById('set-pop-b2-d').value, btnUrl: document.getElementById('set-pop-btn-url').value };
+        else if(e.target.id === 'form-payment-request') {
+            const fileInput = document.getElementById('pay-req-file'); const b64 = fileInput.dataset.base64; if(!b64) return showToast("사진을 첨부해주세요.");
+            if(!AppState.data.payments) AppState.data.payments = [];
+            AppState.data.payments.unshift({ id: generateId(), userId: AppState.currentUser.id, userName: AppState.currentUser.name, phone: document.getElementById('pay-req-phone').value, item: document.getElementById('pay-req-item').value, amount: "별도", image: b64, status: '승인대기', date: new Date().toISOString().split('T')[0] });
+            syncData(); showToast("결제 승인 요청 전송됨"); AppState.studentTab = 'mypage'; switchView('student'); e.target.reset();
         }
-        
-        // 2. 랜딩페이지 에디터 저장
-        if(e.target.id === 'form-admin-settings') {
-            AppState.data.landing = {
-                heroSub: document.getElementById('set-h-sub').value, heroTitle: document.getElementById('set-h-tit').value.replace(/\n/g, '<br>'), heroDesc: document.getElementById('set-h-desc').value,
-                s1Num: document.getElementById('set-s1-n').value, s1Txt: document.getElementById('set-s1-t').value, s2Num: document.getElementById('set-s2-n').value, s2Txt: document.getElementById('set-s2-t').value, s3Num: document.getElementById('set-s3-n').value, s3Txt: document.getElementById('set-s3-t').value,
-                secTitle: document.getElementById('set-sec-tit').value,
-                f1Badge: document.getElementById('set-f1-b').value, f1Col: document.getElementById('set-f1-c').value, f1Title: document.getElementById('set-f1-t').value, f1Desc: document.getElementById('set-f1-d').value, f1Emoji: document.getElementById('set-f1-e').value,
-                f2Badge: document.getElementById('set-f2-b').value, f2Col: document.getElementById('set-f2-c').value, f2Title: document.getElementById('set-f2-t').value, f2Desc: document.getElementById('set-f2-d').value, f2Emoji: document.getElementById('set-f2-e').value,
-                botTitle: document.getElementById('set-b-tit').value
+        else if(e.target.id === 'form-admin-payment-settings') {
+            if(!AppState.data.settings) AppState.data.settings = {};
+            AppState.data.settings.payment = {
+                pgUrl: document.getElementById('pay-set-pg').value, bankInfo: document.getElementById('pay-set-bank').value, opt1: document.getElementById('pay-set-opt1').value, opt2: document.getElementById('pay-set-opt2').value, opt3: document.getElementById('pay-set-opt3').value, opt4: document.getElementById('pay-set-opt4').value
             };
+            syncData(); showToast("결제 설정이 즉시 반영되었습니다.");
         }
-        
-        syncData(); showToast("수정 사항이 실시간으로 적용되었습니다.");
+        else if(e.target.id === 'form-admin-student') {
+            const mode = AppState.adminModal.mode; 
+            const id = document.getElementById('mod-stu-id').value.trim(); const name = document.getElementById('mod-stu-name').value.trim(); const pw = document.getElementById('mod-stu-pw').value.trim(); 
+            const school = normalizeSchool(document.getElementById('mod-stu-school').value); 
+            const grade = document.getElementById('mod-stu-grade').value.trim(); const expiry = document.getElementById('mod-stu-expiry').value; const teacher = document.getElementById('mod-stu-teacher').value.trim();
+
+            if(!AppState.data.users) AppState.data.users = [];
+            if (mode === 'add') {
+                if(AppState.data.users.some(u => u.id === id) || id === 'studycampus') return showToast("존재하는 아이디입니다.");
+                AppState.data.users.unshift({ id, name, pw, school, grade, teacher, role: 'student', active: true, xp: 0, ticketExpiry: expiry || '' }); showToast("원생이 추가되었습니다.");
+            } else if (mode === 'edit') {
+                const userIdx = AppState.data.users.findIndex(u => u.id === AppState.adminModal.studentId);
+                if(userIdx > -1) { AppState.data.users[userIdx].name = name; AppState.data.users[userIdx].school = school; AppState.data.users[userIdx].grade = grade; AppState.data.users[userIdx].teacher = teacher; AppState.data.users[userIdx].ticketExpiry = expiry || ''; if(pw) AppState.data.users[userIdx].pw = pw; } 
+                showToast("정보가 수정되었습니다.");
+            }
+            AppState.adminModal.isOpen = false; syncData(); renderAdminDashboard();
+        }
+        else if(e.target.id === 'form-community') {
+            if (!AppState.data.community) AppState.data.community = [];
+            AppState.data.community.unshift({ id: generateId(), authorId: AppState.currentUser.id, author: AppState.currentUser.name, content: document.getElementById('comm-text').value, date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }), likes: [], comments: [] });
+            syncData(); showToast("게시물이 등록되었습니다."); e.target.reset();
+        }
+        else if(e.target.id === 'form-comment') {
+            const post = AppState.data.community.find(c => c.id === AppState.activePostId); if(!post.comments) post.comments = [];
+            post.comments.push({ id: generateId(), author: AppState.currentUser.name, content: document.getElementById('comment-text').value, date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }); syncData(); showToast("댓글 작성됨"); document.getElementById('comment-text').value = '';
+        }
+        else if(e.target.id === 'form-admin-material') {
+            const fileInput = document.getElementById('mat-file'); const file = fileInput.files[0]; let fileData = null; let fileName = '';
+            if (file) { if(file.size > 2 * 1024 * 1024) return showToast('⚠️ 2MB 이하만 가능'); showToast("업로드 중..."); fileData = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); }); fileName = file.name; }
+            if(!AppState.data.materials) AppState.data.materials = []; AppState.data.materials.unshift({ id: generateId(), category: document.getElementById('mat-cat').value, title: document.getElementById('mat-title').value, desc: document.getElementById('mat-desc').value, fileData, fileName }); syncData(); showToast("업로드 완료"); e.target.reset();
+        }
+        else if(e.target.id === 'form-admin-hw') {
+            if(!AppState.data.homework) AppState.data.homework = []; const tVal = document.getElementById('hw-target').value;
+            AppState.data.homework.unshift({ id: generateId(), target: tVal, type: tVal === 'all' ? 'all' : 'individual', week: document.getElementById('hw-week').value, date: document.getElementById('hw-date').value, day: document.getElementById('hw-day').value, desc: document.getElementById('hw-desc').value });
+            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: "📝 신규 숙제 배포", content: `${document.getElementById('hw-week').value} 숙제 알림`, date: new Date().toISOString() }); syncData(); showToast("배포 완료"); e.target.reset();
+        }
+        else if(e.target.id === 'form-admin-notice') {
+            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: document.getElementById('adm-notice-title').value, content: document.getElementById('adm-notice-content').value, date: new Date().toISOString() }); syncData(); showToast("공지 완료"); e.target.reset();
+        }
+        else if(e.target.id === 'form-admin-lec') {
+            if(!AppState.data.lectures) AppState.data.lectures = []; AppState.data.lectures.push({ id: generateId(), title: document.getElementById('lec-title').value, link: document.getElementById('lec-link').value }); syncData(); showToast("강의 등록 완료"); e.target.reset();
+        }
+        else if(e.target.id === 'form-admin-system' || e.target.id === 'form-admin-settings') {
+            if(!AppState.data.settings) AppState.data.settings = {}; 
+            
+            if(e.target.id === 'form-admin-system') {
+                AppState.data.settings.dashBanner = document.getElementById('set-dash-banner').value;
+                AppState.data.settings.popup = { active: document.getElementById('set-pop-active').checked, tag: document.getElementById('set-pop-tag').value, title: document.getElementById('set-pop-title').value, desc: document.getElementById('set-pop-desc').value, b1Title: document.getElementById('set-pop-b1-t').value, b1Desc: document.getElementById('set-pop-b1-d').value, b2Title: document.getElementById('set-pop-b2-t').value, b2Desc: document.getElementById('set-pop-b2-d').value, btnUrl: document.getElementById('set-pop-btn-url').value };
+            }
+            if(e.target.id === 'form-admin-settings') {
+                AppState.data.landing = {
+                    heroSub: document.getElementById('set-h-sub').value, heroTitle: document.getElementById('set-h-tit').value.replace(/\n/g, '<br>'), heroDesc: document.getElementById('set-h-desc').value,
+                    s1Num: document.getElementById('set-s1-n').value, s1Txt: document.getElementById('set-s1-t').value, s2Num: document.getElementById('set-s2-n').value, s2Txt: document.getElementById('set-s2-t').value, s3Num: document.getElementById('set-s3-n').value, s3Txt: document.getElementById('set-s3-t').value,
+                    secTitle: document.getElementById('set-sec-tit').value,
+                    f1Badge: document.getElementById('set-f1-b').value, f1Col: document.getElementById('set-f1-c').value, f1Title: document.getElementById('set-f1-t').value, f1Desc: document.getElementById('set-f1-d').value, f1Emoji: document.getElementById('set-f1-e').value,
+                    f2Badge: document.getElementById('set-f2-b').value, f2Col: document.getElementById('set-f2-c').value, f2Title: document.getElementById('set-f2-t').value, f2Desc: document.getElementById('set-f2-d').value, f2Emoji: document.getElementById('set-f2-e').value,
+                    botTitle: document.getElementById('set-b-tit').value
+                };
+            }
+            syncData(); showToast("수정 사항이 실시간으로 적용되었습니다.");
+        }
+    } catch(err) {
+        console.error("폼 제출 오류:", err);
+        showToast("처리 중 오류가 발생했습니다.");
     }
 });
 
+// 앱 시작
 document.addEventListener('DOMContentLoaded', () => {
     try {
         const session = localStorage.getItem('studycampus_session');
