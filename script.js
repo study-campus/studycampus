@@ -346,7 +346,13 @@ function renderStudentDashboard() {
             data.lectures.forEach((l, idx) => {
                 const p = me.lectureProgress?.[l.id] || { percent: 0, done: false };
                 const isDone = p.done || p.percent >= 90;
-                const iconBg = isDone ? '#dcfce7' : '#e0e7ff'; const iconColor = isDone ? '#16a34a' : '#4f46e5'; const iconChar = isDone ? '✓' : '▶'; const btnText = isDone ? '완료' : '시청'; const btnColor = isDone ? '#16a34a' : '#3b82f6';
+                
+                const iconBg = isDone ? '#dcfce7' : '#e0e7ff';
+                const iconColor = isDone ? '#16a34a' : '#4f46e5';
+                const iconChar = isDone ? '✓' : '▶';
+                const btnText = isDone ? '완료' : '시청';
+                const btnColor = isDone ? '#16a34a' : '#3b82f6';
+
                 html += `
                 <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 0; border-bottom:1px solid #f1f5f9;">
                     <div style="display:flex; align-items:center; gap:15px; width:75%;">
@@ -383,41 +389,20 @@ function renderStudentDashboard() {
         }
     }
     else if (studentTab === 'mypage') {
-        html += `
-            <div style="border:1px solid #7f1d1d; background:rgba(127,29,29,0.1); border-radius:12px; padding:20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <div style="display:flex; align-items:center; gap:10px; color:#f8fafc; font-weight:700;"><span style="font-size:20px;">🔑</span> 수강권 상태</div>
-                <button class="btn-white btn-sm" style="color:black; padding:8px 16px;" data-action="nav" data-target="payment">결제/연장</button>
-            </div>
-            <div class="stu-card">
-                <h3 style="font-size:16px; font-weight:700; margin-bottom:15px; display:flex; align-items:center; gap:8px;">📝 주간 분석 리포트</h3>
-                <hr style="border-color:#334155; margin-bottom:15px;">`;
-                
+        html += `<div style="border:1px solid #7f1d1d; background:rgba(127,29,29,0.1); border-radius:12px; padding:20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><div style="display:flex; align-items:center; gap:10px; color:#f8fafc; font-weight:700;"><span style="font-size:20px;">🔑</span> 수강권 상태</div><button class="btn-white btn-sm" style="color:black; padding:8px 16px;" data-action="nav" data-target="payment">결제/연장</button></div><div class="stu-card"><h3 style="font-size:16px; font-weight:700; margin-bottom:15px; display:flex; align-items:center; gap:8px;">📝 주간 분석 리포트</h3><hr style="border-color:#334155; margin-bottom:15px;">`;
         const myReports = (data.reports || []).filter(r => r.studentId === me.id);
         if(myReports.length === 0) html += `<div style="text-align:center; color:#64748b; font-size:14px; padding:20px 0;">리포트 없음</div>`;
         else myReports.forEach(r => html += `<div style="background:#0f172a; padding:15px; border-radius:8px; margin-bottom:10px;"><strong style="color:#60a5fa; display:block; margin-bottom:8px;">📅 ${r.date} 발송 리포트</strong><p style="font-size:14px; line-height:1.6; white-space:pre-wrap; color:#cbd5e1;">${r.content}</p></div>`);
-
-        html += `
-            </div>
-            <div class="stu-card" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='var(--border)'" data-action="open-student-edit">
-                <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:12px;"><span style="font-size:20px;">⚙️</span> 회원 정보 수정</h3>
-                <span style="color:#64748b; font-weight:bold; font-size:16px;">&gt;</span>
-            </div>
-            <div class="stu-card">
-                <h3 style="font-size:16px; font-weight:700; margin-bottom:15px;">1:1 카카오톡 문의센터</h3>
-                <a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" style="display:block; text-align:center; background:#3b82f6; color:white; border:none; width:100%; padding:15px; border-radius:8px; font-weight:800; cursor:pointer;">카톡으로 접수/연결</a>
-            </div>
-            <div style="text-align:right;"><button class="btn-text" style="color:#ef4444;" data-action="delete-account">회원탈퇴</button></div>
-        `;
+        html += `</div><div class="stu-card" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='var(--border)'" data-action="open-student-edit"><h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:12px;"><span style="font-size:20px;">⚙️</span> 회원 정보 수정</h3><span style="color:#64748b; font-weight:bold; font-size:16px;">&gt;</span></div><div class="stu-card"><h3 style="font-size:16px; font-weight:700; margin-bottom:15px;">1:1 카카오톡 문의센터</h3><a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" style="display:block; text-align:center; background:#3b82f6; color:white; border:none; width:100%; padding:15px; border-radius:8px; font-weight:800; cursor:pointer;">카톡으로 접수/연결</a></div><div style="text-align:right;"><button class="btn-text" style="color:#ef4444;" data-action="delete-account">회원탈퇴</button></div>`;
     }
     container.innerHTML = html;
 }
 
-// ------------------------- 관리자 대시보드 렌더링 -------------------------
+// ------------------------- 관리자 렌더링 -------------------------
 function renderAdminDashboard() {
     const container = document.getElementById('admin-dash-content');
     const tab = AppState.adminTab; const data = AppState.data; const set = data.settings || DEFAULT_STATE.settings; const ld = { ...DEFAULT_STATE.landing, ...(data.landing || {}) };
     let html = '<div class="admin-grid">';
-
     document.querySelectorAll('#admin-top-nav .admin-tab').forEach(el => el.classList.toggle('active', el.dataset.tab === tab));
 
     if (tab === 'users') {
@@ -430,8 +415,16 @@ function renderAdminDashboard() {
     else if (tab === 'deploy') {
         const currentMaxWeek = (data.homework && data.homework.length > 0) ? Math.max(...data.homework.map(h => parseInt(h.week) || 1)) : 1;
 
+        // 🔥 [완벽 해결] 공지 배포 카드에도 grid-column:1/-1 을 주고 버튼 너비를 100%로 통일
         html += `
-            <div class="admin-card"><h2>📢 공지 배포 (모든 학생 알림)</h2><form id="form-admin-notice"><input type="text" id="adm-notice-title" class="admin-input" required placeholder="공지 제목"><textarea id="adm-notice-content" class="admin-input" style="height:100px; resize:none;" required placeholder="내용"></textarea><button type="submit" class="btn-primary">공지 올리기</button></form></div>
+            <div class="admin-card" style="grid-column:1/-1;">
+                <h2>📢 공지 배포 (모든 학생 알림)</h2>
+                <form id="form-admin-notice">
+                    <input type="text" id="adm-notice-title" class="admin-input" required placeholder="공지 제목">
+                    <textarea id="adm-notice-content" class="admin-input" style="height:100px; resize:none;" required placeholder="내용"></textarea>
+                    <button type="submit" class="btn-primary" style="width:100%;">공지 올리기</button>
+                </form>
+            </div>
             
             <div class="admin-card" style="grid-column:1/-1;">
                 <h2>📝 주간 과제 배포 및 관리</h2>
@@ -585,8 +578,14 @@ document.body.addEventListener('click', (e) => {
         const action = actionNode.dataset.action;
 
         if (action === 'nav') switchView(actionNode.dataset.target);
-        else if (action === 'auth-toggle') { if(AppState.currentUser) { AppState.currentUser = null; localStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); } else { switchView('auth'); switchAuthMode('login'); } }
-        else if (action === 'auth-register') { if (AppState.currentUser) switchView(AppState.currentUser.role === 'admin' ? 'admin' : 'student'); else { switchView('auth'); switchAuthMode('register'); } }
+        else if (action === 'auth-toggle') {
+            if(AppState.currentUser) { AppState.currentUser = null; localStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); }
+            else { switchView('auth'); switchAuthMode('login'); }
+        }
+        else if (action === 'auth-register') {
+            if (AppState.currentUser) switchView(AppState.currentUser.role === 'admin' ? 'admin' : 'student');
+            else { switchView('auth'); switchAuthMode('register'); }
+        }
         else if (action === 'switch-auth') switchAuthMode(actionNode.dataset.mode);
         else if (action === 'switch-admin-tab') { AppState.adminTab = actionNode.dataset.tab; renderAdminDashboard(); }
         else if (action === 'switch-student-tab') { clearLectureTimer(); AppState.studentTab = actionNode.dataset.tab; renderStudentDashboard(); }
@@ -599,16 +598,17 @@ document.body.addEventListener('click', (e) => {
         else if (action === 'close-student-edit') { document.getElementById('modal-student-edit').classList.add('hidden'); }
         else if (action === 'toggle-notif') { const drop = document.getElementById('notif-dropdown'); if(drop) { drop.classList.toggle('hidden'); if(!drop.classList.contains('hidden')) { let upd = false; (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }}); if(upd) syncData(); document.getElementById('notif-badge').classList.add('hidden'); } } }
         else if (action === 'close-popup') { document.getElementById('student-auto-popup').classList.add('hidden'); sessionStorage.setItem('studycampus_popup_shown', 'true'); }
-        else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 띄우지 않습니다."); }
+        else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 보지 않습니다."); }
         else if (action === 'change-week') { const dir = parseInt(actionNode.dataset.dir); let newWeek = AppState.currentHwWeekNumber + dir; if (newWeek < 1) newWeek = 1; AppState.currentHwWeekNumber = newWeek; renderStudentDashboard(); }
         else if (action === 'set-mat-cat') { AppState.materialCategory = actionNode.dataset.cat; renderStudentDashboard(); }
+        
         else if (action === 'open-post') { AppState.activePostId = actionNode.dataset.id; renderStudentDashboard(); }
         else if (action === 'close-post') { AppState.activePostId = null; renderStudentDashboard(); }
         else if (action === 'edit-post') { const post = AppState.data.community.find(c => c.id === actionNode.dataset.id); if(post) { const newText = prompt("게시물 내용을 수정하세요:", post.content); if(newText !== null && newText.trim() !== "") { post.content = newText.trim(); syncData(); showToast("수정되었습니다."); renderStudentDashboard(); } } }
         else if (action === 'delete-post') { if(confirm("이 게시물을 완전히 삭제하시겠습니까?")) { AppState.data.community = AppState.data.community.filter(c => c.id !== actionNode.dataset.id); if(AppState.activePostId === actionNode.dataset.id) AppState.activePostId = null; syncData(); showToast("삭제되었습니다."); renderStudentDashboard(); } }
         else if (action === 'toggle-like') { const post = AppState.data.community.find(c => c.id === actionNode.dataset.id); if(post) { if(!post.likes) post.likes = []; const meId = AppState.currentUser.id; const idx = post.likes.indexOf(meId); if(idx > -1) post.likes.splice(idx, 1); else post.likes.push(meId); syncData(); } }
         
-        // 강의 플레이어 화면 스위치 (예외처리 버그 완벽 복구 완료)
+        // 🔥 강의 플레이어 오류 원인 완벽 보호 (화면 전환을 확실하게 적용시킴)
         else if (action === 'open-lecture') { AppState.activeLecture = AppState.data.lectures.find(l => l.id === actionNode.dataset.id); switchView('lecture-player'); }
         else if (action === 'close-lecture') { switchView('student'); }
         
@@ -618,7 +618,7 @@ document.body.addEventListener('click', (e) => {
         
         // 관리자
         else if (action === 'edit-admin-hw') { const hw = AppState.data.homework.find(h => h.id === actionNode.dataset.id); if(hw) { const newDesc = prompt("과제 내용을 수정하세요:", hw.desc); if(newDesc !== null && newDesc.trim() !== "") { hw.desc = newDesc.trim(); syncData(); showToast("수정되었습니다."); renderAdminDashboard(); } } }
-        else if (action === 'delete-admin-hw') { if(confirm("해당 주차의 숙제를 완전히 삭제하시겠습니까?")) { AppState.data.homework = AppState.data.homework.filter(h => h.id !== actionNode.dataset.id); syncData(); showToast("삭제되었습니다."); renderAdminDashboard(); } }
+        else if (action === 'delete-admin-hw') { if(confirm("해당 주차의 과제를 완전히 삭제하시겠습니까?")) { AppState.data.homework = AppState.data.homework.filter(h => h.id !== actionNode.dataset.id); syncData(); showToast("과제가 삭제되었습니다."); renderAdminDashboard(); } }
         else if (action === 'toggle-user') { const user = AppState.data.users.find(u => String(u.id) === String(actionNode.dataset.id)); if(user) user.active = !user.active; syncData(); showToast("상태가 변경되었습니다."); }
         else if (action === 'delete-user') { if(confirm("정말 삭제할까요?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== actionNode.dataset.id); syncData(); showToast("삭제되었습니다."); renderAdminDashboard(); } }
         else if (action === 'open-admin-modal') { AppState.adminModal = { isOpen: true, mode: actionNode.dataset.mode, studentId: actionNode.dataset.id || null }; renderAdminDashboard(); }
@@ -638,10 +638,10 @@ document.body.addEventListener('click', (e) => {
             AppState.data.alerts.unshift({ id: generateId(), studentId: AppState.aiModal.studentId, title: "주간 분석 리포트 도착", content: "새로운 리포트가 등록되었습니다.", read: false, date: new Date().toISOString().split('T')[0] });
             syncData(); showToast("성공적으로 발송되었습니다!"); document.querySelector('[data-action="close-ai-modal"]').click();
         }
-    } catch(err) { console.error("클릭 이벤트 오류:", err); }
+    } catch(err) { console.error("클릭 이벤트 내부 에러 처리:", err); }
 });
 
-// 폼(Form) 제출 이벤트 제어
+// 폼(Form) 제출 컨트롤 센터
 document.body.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
