@@ -16,9 +16,9 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // 🔥 [Notifly] 초기화 로직 (여기에 프로젝트 ID를 입력하세요)
-const NOTIFLY_PROJECT_ID = "studycampus"; 
+const NOTIFLY_PROJECT_ID = "905093046d9452039ab31b2258164fcc"; 
 try {
-    if (window.Notifly && NOTIFLY_PROJECT_ID !== "studycampus") {
+    if (window.Notifly && NOTIFLY_PROJECT_ID !== "905093046d9452039ab31b2258164fcc") {
         window.Notifly.init(NOTIFLY_PROJECT_ID);
         console.log("Notifly Initialized!");
     }
