@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
+// 파이어베이스 초기화
 const firebaseConfig = {
     apiKey: "AIzaSyCHwxv-MJBK8wXA4C1Q98jDEh_ESRbhaBI",
     authDomain: "studycampus-6e42f.firebaseapp.com",
@@ -13,6 +14,17 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+
+// 🔥 [Notifly] 초기화 로직 (여기에 프로젝트 ID를 입력하세요)
+const NOTIFLY_PROJECT_ID = "studycampus"; 
+try {
+    if (window.Notifly && NOTIFLY_PROJECT_ID !== "studycampus") {
+        window.Notifly.init(NOTIFLY_PROJECT_ID);
+        console.log("Notifly Initialized!");
+    }
+} catch (e) {
+    console.warn("Notifly 초기화 실패 (프로젝트 ID를 확인하세요)", e);
+}
 
 const DEFAULT_STATE = {
     users: [], lectures: [], homework: [], hwSubmissions: [], community: [], notices: [], payments: [], materials: [], reports: [], alerts: [],
@@ -43,14 +55,13 @@ const generateId = () => Date.now().toString(36) + Math.random().toString(36).su
 function clearLectureTimer() { if(AppState.lectureTimer) { clearInterval(AppState.lectureTimer); AppState.lectureTimer = null; } }
 function normalizeSchool(name) { let s = name.trim(); if(s && s.endsWith('고')) s += '등학교'; return s; }
 
-// ------------------------- 파이어베이스 (실시간 동기화 오류 방어) -------------------------
+// 파이어베이스 데이터 동기화
 const dbRef = ref(db, 'studycampus_data');
 onValue(dbRef, (snapshot) => {
     const serverData = snapshot.val();
     if (serverData) AppState.data = serverData;
     else set(dbRef, AppState.data);
 
-    // 텍스트 입력 중 리렌더링 차단 (입력 데이터 증발 방어)
     const activeEl = document.activeElement;
     const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
     const isModalOpen = document.querySelector('.modal-overlay:not(.hidden)') !== null;
@@ -63,7 +74,7 @@ onValue(dbRef, (snapshot) => {
 
 function syncData() { set(dbRef, AppState.data); }
 
-// ------------------------- 라우팅 -------------------------
+// 라우팅
 function switchView(viewName) {
     clearLectureTimer(); 
     if(viewName !== 'lecture-player') AppState.activeLecture = null;
@@ -214,7 +225,7 @@ function renderLecturePlayer() {
     }
 }
 
-// ------------------------- 학생 대시보드 렌더링 -------------------------
+// ------------------------- 학생 대시보드 메인 -------------------------
 function renderStudentDashboard() {
     const container = document.getElementById('student-dash-content');
     const { currentUser, data, studentTab } = AppState;
@@ -241,12 +252,8 @@ function renderStudentDashboard() {
     if (studentTab === 'homework') {
         if (data.homework && data.homework.length > 0) {
             const maxW = Math.max(...data.homework.map(h => parseInt(h.week) || 1));
-            if (!AppState.currentHwWeekNumber || AppState.currentHwWeekNumber > maxW) {
-                AppState.currentHwWeekNumber = maxW;
-            }
-        } else {
-            AppState.currentHwWeekNumber = 1;
-        }
+            if (!AppState.currentHwWeekNumber || AppState.currentHwWeekNumber > maxW) { AppState.currentHwWeekNumber = maxW; }
+        } else { AppState.currentHwWeekNumber = 1; }
     }
 
     if (studentTab === 'home') {
@@ -403,13 +410,13 @@ function renderAdminDashboard() {
         const currentMaxWeek = (data.homework && data.homework.length > 0) ? Math.max(...data.homework.map(h => parseInt(h.week) || 1)) : 1;
 
         html += `
-            <div class="admin-card" style="grid-column:1/-1;"><h2>📢 공지 배포 (모든 학생 알림)</h2><form id="form-admin-notice"><input type="text" id="adm-notice-title" class="admin-input" required placeholder="공지 제목"><textarea id="adm-notice-content" class="admin-input" style="height:100px; resize:none;" required placeholder="내용"></textarea><button type="submit" class="btn-primary" style="width:100%;">공지 올리기</button></form></div>
+            <div class="admin-card" style="grid-column:1/-1;"><h2>📢 공지 배포 (Notifly 푸시 연동)</h2><form id="form-admin-notice"><input type="text" id="adm-notice-title" class="admin-input" required placeholder="공지 제목"><textarea id="adm-notice-content" class="admin-input" style="height:100px; resize:none;" required placeholder="내용"></textarea><button type="submit" class="btn-primary" style="width:100%;">공지 올리기 및 푸시 알림 전송</button></form></div>
             <div class="admin-card" style="grid-column:1/-1;"><h2>📝 주간 과제 배포 및 관리</h2><div style="background:#0f172a; padding:15px; border-radius:8px; margin-bottom:20px; font-size:13px; color:#94a3b8; line-height:1.5;">💡 현재 배포된 가장 최신 주차는 <strong style="color:#60a5fa; font-size:15px;">${currentMaxWeek}주차</strong> 입니다.<br>새로운 주차 번호를 배포하면 학생들이 앱을 열 때 자동으로 해당 주차로 화면이 갱신됩니다.</div><form id="form-admin-hw"><select id="hw-target" class="admin-input"><option value="all">전체 배포</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select><div style="display:flex; gap:10px;"><div style="flex:1;"><label class="admin-label">주차 번호 (숫자만 기입)</label><input type="number" id="hw-week" class="admin-input" value="${currentMaxWeek}" required style="margin:0;"></div><div style="flex:1;"><label class="admin-label">숙제 제출 날짜 (달력 선택 시 자동 요일 계산)</label><input type="date" id="hw-date" class="admin-input" required style="margin:0;"></div></div><textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px; margin-top:10px;"></textarea><button type="submit" class="btn-primary" style="width:100%;">새 숙제 배포하기</button></form><h3 style="margin-top:40px; margin-bottom:15px; color:#60a5fa; font-size:15px; border-bottom:1px solid #334155; padding-bottom:10px;">등록된 과제 목록 관리 (수정/삭제)</h3><div class="table-responsive"><table class="admin-table" style="min-width:600px;"><thead><tr><th>주차</th><th>날짜(요일)</th><th>내용</th><th>대상</th><th>관리</th></tr></thead><tbody>`;
         if(!data.homework || data.homework.length===0) { html += `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">등록된 과제가 없습니다.</td></tr>`; } 
         else { const sortedHw = [...data.homework].sort((a,b) => parseInt(b.week) - parseInt(a.week) || new Date(a.date) - new Date(b.date)); sortedHw.forEach(h => { html += `<tr><td style="font-weight:bold;">${h.week}주차</td><td>${h.date}<br><span style="font-size:11px; color:#94a3b8;">${h.day}</span></td><td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${h.desc}">${h.desc}</td><td>${h.target==='all'?'전체':h.target}</td><td><button class="btn-sm btn-outline" data-action="edit-admin-hw" data-id="${h.id}">내용 수정</button><button class="btn-sm btn-danger" style="background:#ef4444; border:none; margin-left:5px; color:white;" data-action="delete-admin-hw" data-id="${h.id}">삭제</button></td></tr>`; }); }
         html += `</tbody></table></div></div>
             <div class="admin-card" style="grid-column:1/-1;"><h2>💻 동영상 강의 등록</h2><form id="form-admin-lec" style="display:flex; gap:10px;"><input type="text" id="lec-title" class="admin-input" placeholder="강의 제목" required style="margin:0;"><input type="url" id="lec-link" class="admin-input" placeholder="강의 URL" required style="margin:0;"><button type="submit" class="btn-primary" style="width:auto; padding:0 30px;">등록</button></form></div>
-            <div class="admin-card" style="grid-column:1/-1;"><h2>📁 자료실 첨부자료 업로드 (최대 10MB 가능)</h2><form id="form-admin-material" style="display:grid; grid-template-columns:150px 1fr auto; gap:10px; align-items:start;"><select id="mat-cat" class="admin-input" style="margin:0;"><option value="공지">공지</option><option value="교재">교재</option></select><input type="text" id="mat-title" class="admin-input" placeholder="자료명 (제목)" required style="margin:0;"><input type="file" id="mat-file" class="admin-input" style="margin:0; padding:9px;"><textarea id="mat-desc" class="admin-input" placeholder="자료에 대한 간략한 설명" style="grid-column:1/-1; height:60px; resize:none; margin:0;"></textarea><button type="submit" class="btn-primary" style="grid-column:1/-1;">게시 및 파일 업로드</button></form></div>
+            <div class="admin-card" style="grid-column:1/-1;"><h2>📁 자료실 첨부자료 업로드 (최대 100MB 가능)</h2><form id="form-admin-material" style="display:grid; grid-template-columns:150px 1fr auto; gap:10px; align-items:start;"><select id="mat-cat" class="admin-input" style="margin:0;"><option value="공지">공지</option><option value="교재">교재</option></select><input type="text" id="mat-title" class="admin-input" placeholder="자료명 (제목)" required style="margin:0;"><input type="file" id="mat-file" class="admin-input" style="margin:0; padding:9px;"><textarea id="mat-desc" class="admin-input" placeholder="자료에 대한 간략한 설명" style="grid-column:1/-1; height:60px; resize:none; margin:0;"></textarea><button type="submit" class="btn-primary" style="grid-column:1/-1;">게시 및 파일 업로드</button></form></div>
             <div class="admin-card" style="grid-column:1/-1;"><h2>💬 학생 과제 제출함</h2>${(!data.hwSubmissions || data.hwSubmissions.length===0) ? '<p style="color:var(--text-muted); text-align:center;">제출된 숙제가 없습니다.</p>' : data.hwSubmissions.map(s => `<div style="border:1px solid var(--border); padding:20px; border-radius:12px; margin-bottom:15px; background:var(--bg-dark);"><div style="display:flex; justify-content:space-between; margin-bottom:15px;"><strong>👤 ${s.studentName} 학생 제출본</strong><span style="color:${s.status==='approved'?'#10b981':(s.status==='rejected'?'#ef4444':'#60a5fa')}">${s.status === 'approved' ? '승인' : (s.status === 'rejected' ? '반려' : '대기중')}</span></div><div style="display:flex; gap:10px; overflow-x:auto; padding-bottom:15px; margin-bottom:15px; border-bottom:1px solid var(--border);">${s.files.map((f) => `<a href="${f.data}" download="${f.name}" style="background:#1e293b; padding:10px 15px; border-radius:8px; font-size:12px; font-weight:600; color:white; border:1px solid #334155; white-space:nowrap;">📄 ${f.name}</a>`).join('')}</div><div style="display:flex; gap:10px;">${s.status === 'pending' ? `<button class="btn-primary btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="approved">✅ 승인</button><button class="btn-primary btn-sm" style="background:#ef4444;" data-action="review-hw" data-subid="${s.id}" data-status="rejected">❌ 반려</button>` : `<button class="btn-text btn-sm" data-action="review-hw" data-subid="${s.id}" data-status="pending">상태 초기화</button>`}</div></div>`).join('')}</div>
         `;
     }
@@ -494,29 +501,13 @@ document.body.addEventListener('change', async (e) => {
     if (e.target.matches('input[type="file"]')) {
         const files = Array.from(e.target.files || []);
         if(files.length === 0) return;
-        
-        // 🔥 10MB 용량 제한 설정 및 안내 문구 수정 (모든 파일 업로드 공통 적용)
-        const limitSize = 10 * 1024 * 1024;
-        const limitText = '10MB';
-
-        if(files.some(f => f.size > limitSize)) { 
-            e.target.value = ''; 
-            return showToast(`⚠️ ${limitText} 이하 파일만 첨부 가능합니다.`); 
-        }
-        
+        const limitSize = 100 * 1024 * 1024;
+        if(files.some(f => f.size > limitSize)) { e.target.value = ''; return showToast(`⚠️ 100MB 이하 파일만 첨부 가능합니다.`); }
         showToast("파일 처리 중...");
         try {
-            const b64 = await Promise.all(files.map(f => new Promise(res => {
-                const r = new FileReader(); r.onload = ev => res({ name: f.name, data: ev.target.result }); r.readAsDataURL(f);
-            })));
-            
-            if (e.target.id === 'pay-req-file') {
-                e.target.dataset.base64 = b64[0].data; showToast("✅ 사진이 첨부되었습니다.");
-            } else if (e.target.dataset.hwid) {
-                if(!AppState.data.hwSubmissions) AppState.data.hwSubmissions = [];
-                AppState.data.hwSubmissions.push({ id: generateId(), hwId: e.target.dataset.hwid, studentId: AppState.currentUser.id, studentName: AppState.currentUser.name, files: b64, status: 'pending' });
-                syncData(); showToast("✅ 숙제 제출 완료!");
-            }
+            const b64 = await Promise.all(files.map(f => new Promise(res => { const r = new FileReader(); r.onload = ev => res({ name: f.name, data: ev.target.result }); r.readAsDataURL(f); })));
+            if (e.target.id === 'pay-req-file') { e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료"); } 
+            else if (e.target.dataset.hwid) { if(!AppState.data.hwSubmissions) AppState.data.hwSubmissions = []; AppState.data.hwSubmissions.push({ id: generateId(), hwId: e.target.dataset.hwid, studentId: AppState.currentUser.id, studentName: AppState.currentUser.name, files: b64, status: 'pending' }); syncData(); showToast("✅ 숙제 제출 완료!"); }
         } catch (err) { showToast("❌ 파일 업로드 오류가 발생했습니다."); }
     }
 });
@@ -540,6 +531,7 @@ document.body.addEventListener('click', (e) => {
         else if (action === 'switch-admin-tab') { AppState.adminTab = actionNode.dataset.tab; renderAdminDashboard(); }
         else if (action === 'switch-student-tab') { clearLectureTimer(); AppState.studentTab = actionNode.dataset.tab; renderStudentDashboard(); }
         else if (action === 'back-to-mypage') { AppState.studentTab = 'mypage'; switchView('student'); }
+        
         else if (action === 'open-student-edit') {
             const me = AppState.data.users.find(u => u.id === AppState.currentUser.id) || AppState.currentUser;
             document.getElementById('stu-edit-name').value = me.name || ''; document.getElementById('stu-edit-school').value = me.school ? me.school.replace('등학교','') : ''; document.getElementById('stu-edit-grade').value = me.grade || '고2'; document.getElementById('stu-edit-pw').value = '';
@@ -551,7 +543,7 @@ document.body.addEventListener('click', (e) => {
             if(drop) { drop.classList.toggle('hidden'); if(!drop.classList.contains('hidden')) { let upd = false; (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }}); if(upd) syncData(); document.getElementById('notif-badge').classList.add('hidden'); } }
         }
         else if (action === 'close-popup') { document.getElementById('student-auto-popup').classList.add('hidden'); sessionStorage.setItem('studycampus_popup_shown', 'true'); }
-        else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 보지 않습니다."); }
+        else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 띄우지 않습니다."); }
         else if (action === 'change-week') { const dir = parseInt(actionNode.dataset.dir); let newWeek = AppState.currentHwWeekNumber + dir; if (newWeek < 1) newWeek = 1; AppState.currentHwWeekNumber = newWeek; renderStudentDashboard(); }
         else if (action === 'set-mat-cat') { AppState.materialCategory = actionNode.dataset.cat; renderStudentDashboard(); }
         else if (action === 'open-post') { AppState.activePostId = actionNode.dataset.id; renderStudentDashboard(); }
@@ -569,6 +561,20 @@ document.body.addEventListener('click', (e) => {
         }
         else if (action === 'open-lecture') { AppState.activeLecture = AppState.data.lectures.find(l => l.id === actionNode.dataset.id); switchView('lecture-player'); }
         else if (action === 'close-lecture') { switchView('student'); }
+        else if (action === 'play-video') {
+            clearLectureTimer();
+            const lecId = AppState.activeLecture.id; const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
+            if(!AppState.data.users[userIdx].lectureProgress) AppState.data.users[userIdx].lectureProgress = {};
+            let prog = AppState.data.users[userIdx].lectureProgress[lecId]?.percent || 0;
+            actionNode.innerHTML = '⏸️'; showToast("수강 기록 시작됨");
+            AppState.lectureTimer = setInterval(() => {
+                prog += 5; 
+                if (prog >= 90) { prog = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 90% 달성 완료!"); } 
+                else { AppState.data.users[userIdx].lectureProgress[lecId] = { percent: prog, done: false }; }
+                const bar = document.getElementById('live-progress-bar'); const txt = document.getElementById('live-progress-text');
+                if(bar) bar.style.width = prog + '%'; if(txt) txt.textContent = prog + '%';
+            }, 1000);
+        }
         else if (action === 'trigger-file') { const fi = document.getElementById(`hw-file-${actionNode.dataset.id}`); if(fi) fi.click(); }
         else if (action === 'cancel-hw') { AppState.data.hwSubmissions = AppState.data.hwSubmissions.filter(s => s.id !== actionNode.dataset.subid); syncData(); showToast("기존 제출본 삭제됨"); }
         else if (action === 'delete-account') { if(confirm("탈퇴하시겠습니까? (데이터 삭제)")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); localStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
@@ -598,7 +604,7 @@ document.body.addEventListener('click', (e) => {
     } catch(err) { console.error("클릭 이벤트 오류:", err); }
 });
 
-// 폼(Form) 제출 컨트롤 센터
+// 폼(Form) 제출 이벤트 제어
 document.body.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -658,39 +664,53 @@ document.body.addEventListener('submit', async (e) => {
             post.comments.push({ id: generateId(), author: AppState.currentUser.name, content: document.getElementById('comment-text').value, date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }); syncData(); showToast("댓글 작성됨"); document.getElementById('comment-text').value = '';
         }
         else if(e.target.id === 'form-admin-material') {
-            // 🔥 관리자 자료실 업로드 (10MB 제한 로직 수정 적용)
             const fileInput = document.getElementById('mat-file'); const file = fileInput.files[0]; let fileData = null; let fileName = '';
-            if (file) { 
-                if(file.size > 10 * 1024 * 1024) return showToast('⚠️ 10MB 이하만 가능합니다.'); 
-                showToast("서버 전송 중..."); 
-                fileData = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); }); fileName = file.name; 
-            }
-            if(!AppState.data.materials) AppState.data.materials = []; 
-            AppState.data.materials.unshift({ id: generateId(), category: document.getElementById('mat-cat').value, title: document.getElementById('mat-title').value, desc: document.getElementById('mat-desc').value, fileData, fileName }); 
-            syncData(); showToast("업로드 완료"); e.target.reset();
+            if (file) { if(file.size > 100 * 1024 * 1024) return showToast('⚠️ 100MB 이하만 가능'); showToast("서버 전송 중... (용량이 클수록 시간이 걸립니다)"); fileData = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); }); fileName = file.name; }
+            if(!AppState.data.materials) AppState.data.materials = []; AppState.data.materials.unshift({ id: generateId(), category: document.getElementById('mat-cat').value, title: document.getElementById('mat-title').value, desc: document.getElementById('mat-desc').value, fileData, fileName }); syncData(); showToast("업로드 완료"); e.target.reset();
         }
         else if(e.target.id === 'form-admin-hw') {
-            if(!AppState.data.homework) AppState.data.homework = []; 
-            const tVal = document.getElementById('hw-target').value;
-            const hwDate = document.getElementById('hw-date').value;
-            const weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-            const dayString = hwDate ? weekDays[new Date(hwDate).getDay()] : '요일정보 없음';
-            
-            AppState.data.homework.unshift({ 
-                id: generateId(), target: tVal, type: tVal === 'all' ? 'all' : 'individual', 
-                week: document.getElementById('hw-week').value, date: hwDate, day: dayString, desc: document.getElementById('hw-desc').value 
-            });
-            syncData(); showToast("숙제가 배포되었습니다."); e.target.reset();
+            if(!AppState.data.homework) AppState.data.homework = []; const tVal = document.getElementById('hw-target').value; const hwDate = document.getElementById('hw-date').value; const weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']; const dayString = hwDate ? weekDays[new Date(hwDate).getDay()] : '요일정보 없음';
+            AppState.data.homework.unshift({ id: generateId(), target: tVal, type: tVal === 'all' ? 'all' : 'individual', week: document.getElementById('hw-week').value, date: hwDate, day: dayString, desc: document.getElementById('hw-desc').value });
+            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: "📝 신규 숙제 배포", content: `${document.getElementById('hw-week').value} 숙제 알림`, date: new Date().toISOString() }); syncData(); showToast("배포 완료"); e.target.reset();
         }
+        
+        // 🔥 [신규 구현] 공지 배포 시 데이터베이스 저장 및 Notifly 푸시 전송 로직
         else if(e.target.id === 'form-admin-notice') {
-            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: document.getElementById('adm-notice-title').value, content: document.getElementById('adm-notice-content').value, date: new Date().toISOString() }); syncData(); showToast("공지 완료"); e.target.reset();
+            const noticeTitle = document.getElementById('adm-notice-title').value;
+            const noticeContent = document.getElementById('adm-notice-content').value;
+            
+            // 데이터베이스 저장
+            if(!AppState.data.notices) AppState.data.notices = []; 
+            AppState.data.notices.unshift({ 
+                id: generateId(), 
+                title: noticeTitle, 
+                content: noticeContent, 
+                date: new Date().toISOString() 
+            });
+            syncData(); 
+            
+            // 🔥 Notifly 연동 트래킹 이벤트 발생
+            try {
+                if (window.Notifly) {
+                    window.Notifly.trackEvent("admin_notice_created", {
+                        title: noticeTitle,
+                        content: noticeContent
+                    });
+                    console.log("Notifly Event Tracked: admin_notice_created");
+                }
+            } catch(notiflyError) {
+                console.error("Notifly 트래킹 실패:", notiflyError);
+            }
+            
+            showToast("공지가 성공적으로 배포 및 전송되었습니다."); 
+            e.target.reset();
         }
+        
         else if(e.target.id === 'form-admin-lec') {
             if(!AppState.data.lectures) AppState.data.lectures = []; AppState.data.lectures.push({ id: generateId(), title: document.getElementById('lec-title').value, link: document.getElementById('lec-link').value }); syncData(); showToast("강의 등록 완료"); e.target.reset();
         }
         else if(e.target.id === 'form-admin-system' || e.target.id === 'form-admin-settings') {
             if(!AppState.data.settings) AppState.data.settings = {}; 
-            
             if(e.target.id === 'form-admin-system') {
                 AppState.data.settings.dashBanner = document.getElementById('set-dash-banner').value;
                 AppState.data.settings.hwWarning = document.getElementById('set-hw-warning').value;
@@ -711,11 +731,18 @@ document.body.addEventListener('submit', async (e) => {
     }
 });
 
-// 앱 시작 시 사용자 세션 유지
+// 🔥 앱 시작 시 사용자 세션 유지 및 [Notifly 사용자 등록]
 document.addEventListener('DOMContentLoaded', () => {
     try {
         const session = localStorage.getItem('studycampus_session');
-        if (session) AppState.currentUser = JSON.parse(session);
+        if (session) {
+            AppState.currentUser = JSON.parse(session);
+            
+            // Notifly에 로그인한 사용자 식별자 등록 (학생 알림 타겟팅 용도)
+            if(window.Notifly && AppState.currentUser.id !== 'admin') {
+                window.Notifly.setUserId(AppState.currentUser.id);
+            }
+        }
     } catch (e) {}
     
     const isAppView = AppState.currentUser !== null;
