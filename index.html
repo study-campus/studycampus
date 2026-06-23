@@ -4,12 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>StudyCampus</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@notifly/web-sdk@latest/dist/notifly.min.js"></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="toast-container"></div>
 
-    <!-- 랜딩 전용 네비게이션 -->
     <header class="global-header global-element" id="main-nav">
         <div class="logo-font" data-action="nav" data-target="landing">studycampus</div>
         <div class="nav-center">
@@ -64,7 +66,6 @@
             </div>
         </section>
 
-        <!-- 로그인/회원가입 모달 -->
         <section id="view-auth" class="view hidden auth-wrapper">
             <div class="auth-modal" id="modal-login">
                 <button class="btn-back" data-action="nav" data-target="landing">&larr; 홈으로</button>
@@ -115,7 +116,6 @@
         </section>
     </main>
 
-    <!-- [학생 대시보드 앱] -->
     <section id="view-student" class="view hidden stu-wrapper">
         <header class="stu-header">
             <div class="logo-font" style="font-size:1.5rem; color:#60a5fa; cursor:pointer;" data-action="switch-student-tab" data-tab="home">studycampus</div>
@@ -138,7 +138,6 @@
             <div class="stu-nav-item" data-action="switch-student-tab" data-tab="mypage"><span class="stu-nav-icon">👤</span>MY</div>
         </nav>
 
-        <!-- 학생 이벤트 팝업 -->
         <div id="student-auto-popup" class="auto-popup-overlay hidden">
             <div class="auto-popup-card">
                 <button class="auto-popup-close" data-action="close-popup">×</button>
@@ -152,7 +151,6 @@
             </div>
         </div>
 
-        <!-- 학생 정보 수정 모달 -->
         <div id="modal-student-edit" class="modal-overlay hidden">
             <div class="modal-content" style="max-width:400px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
@@ -176,7 +174,6 @@
         </div>
     </section>
 
-    <!-- 전용 강의 시청 플레이어 뷰 -->
     <section id="view-lecture-player" class="view hidden" style="background:#0b1120; min-height:100vh; color:white;">
         <header style="padding:15px 20px; display:flex; align-items:center; gap:15px; border-bottom:1px solid #1e293b; background:#0f172a; position:sticky; top:0; z-index:100;">
             <button class="btn-text" style="color:#94a3b8; font-size:14px; display:flex; align-items:center; gap:5px;" data-action="close-lecture">&larr; 내 강의실</button>
@@ -185,7 +182,6 @@
         <main id="lecture-player-content" style="padding:20px; max-width:1400px; margin:0 auto; width:100%;"></main>
     </section>
 
-    <!-- [수강권 결제 센터] -->
     <section id="view-payment" class="view hidden stu-wrapper" style="background:#0f172a;">
         <header class="stu-header" style="justify-content:center; position:relative; background:#0f172a; border-bottom:1px solid #1e293b;">
             <button class="stu-btn-outline" style="position:absolute; left:20px; border-color:#334155;" data-action="back-to-mypage">&larr; 뒤로가기</button>
@@ -219,7 +215,6 @@
         </main>
     </section>
 
-    <!-- [관리자 대시보드] -->
     <section id="view-admin" class="view hidden admin-wrapper">
         <div class="admin-top-bar">🟢 클라우드 연동중</div>
         <header class="admin-header">
@@ -239,13 +234,11 @@
         <p><strong>STUDYCAMPUS | 대표: 이지호</strong><br><span style="color:var(--text-muted); font-size:12px;">이용약관 | 개인정보처리방침 | 환불규정</span></p>
     </footer>
 
-    <!-- 플로팅 카톡 버튼 -->
     <a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" class="kakao-fab global-element">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.535 1.451 4.793 3.693 6.223-.23.864-1.123 3.23-1.168 3.424-.055.234.086.338.256.224.218-.146 3.447-2.316 4.8-3.234.782.203 1.597.311 2.42.311 5.523 0 10-3.582 10-8s-4.477-8-10-8z" fill="#000000"/></svg>
         카톡 문의
     </a>
 
-    <!-- AI 리포트 모달 -->
     <div id="modal-ai-report" class="modal-overlay hidden">
         <div class="modal-content" style="max-width:500px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
