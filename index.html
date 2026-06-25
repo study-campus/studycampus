@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>StudyCampus</title>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@notifly/web-sdk@latest/dist/notifly.min.js"></script>
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,9 +12,9 @@
     <header class="global-header global-element" id="main-nav">
         <div class="logo-font" data-action="nav" data-target="landing">studycampus</div>
         <div class="nav-center">
-            <span data-action="nav" data-target="landing">왜 StudyCampus?</span>
-            <span data-action="nav" data-target="landing">학습 시스템</span>
-            <span data-action="nav" data-target="landing">커리큘럼</span>
+            <span data-action="nav" data-target="why">왜 StudyCampus?</span>
+            <span data-action="nav" data-target="system">학습 시스템</span>
+            <span data-action="nav" data-target="curriculum">커리큘럼</span>
         </div>
         <div class="nav-right">
             <span id="user-profile-tag" class="hidden" style="margin-right:15px; font-weight:bold; color:white;"></span>
@@ -40,7 +37,7 @@
                             <div><strong id="ld-s3-n"></strong><br><span id="ld-s3-t"></span></div>
                         </div>
                         <div class="hero-btns">
-                            <button class="btn-white" data-action="nav" data-target="auth">무료 상담 신청</button>
+                            <button class="btn-white" data-action="nav" data-target="auth">상담 신청</button>
                             <button class="btn-white-outline" data-action="nav" data-target="auth">학생 로그인</button>
                         </div>
                     </div>
@@ -66,6 +63,10 @@
             </div>
         </section>
 
+        <section id="view-why" class="view hidden" style="flex:1; display:flex; justify-content:center; align-items:center;"><h2>왜 StudyCampus? 페이지 준비중</h2></section>
+        <section id="view-system" class="view hidden" style="flex:1; display:flex; justify-content:center; align-items:center;"><h2>학습 시스템 페이지 준비중</h2></section>
+        <section id="view-curriculum" class="view hidden" style="flex:1; display:flex; justify-content:center; align-items:center;"><h2>커리큘럼 페이지 준비중</h2></section>
+
         <section id="view-auth" class="view hidden auth-wrapper">
             <div class="auth-modal" id="modal-login">
                 <button class="btn-back" data-action="nav" data-target="landing">&larr; 홈으로</button>
@@ -74,15 +75,44 @@
                     <p style="font-weight:700;">로그인</p>
                 </div>
                 <form id="form-login" style="display:flex; flex-direction:column; width:100%; align-items:center;">
-                    <input type="text" id="login-id" class="auth-input" required placeholder="아이디 또는 연락처">
+                    <input type="text" id="login-id" class="auth-input" required placeholder="아이디">
                     <input type="password" id="login-pw" class="auth-input" required placeholder="비밀번호">
                     <button type="submit" class="btn-primary auth-submit">로그인</button>
                 </form>
                 <div class="auth-footer" style="display:flex; justify-content:center; gap:12px; width:100%; margin-top:20px;">
-                    <span onclick="alert('아이디 찾기 기능 준비 중입니다.')" style="cursor:pointer; color:var(--text-main);">아이디 찾기</span>
+                    <span data-action="switch-auth" data-mode="find-id" style="cursor:pointer; color:var(--text-muted);">아이디 찾기</span>
                     <span style="color:var(--text-muted);">|</span>
-                    <span onclick="alert('비밀번호 찾기 기능 준비 중입니다.')" style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span>
+                    <span data-action="switch-auth" data-mode="reset-pw" style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span>
                 </div>
+                <div style="text-align:center; margin-top:15px;">
+                    <span data-action="switch-auth" data-mode="register" style="cursor:pointer; color:#60a5fa; font-weight:bold;">회원가입</span>
+                </div>
+            </div>
+
+            <div class="auth-modal hidden" id="modal-find-id" style="background:white; color:#1e293b;">
+                <button class="btn-back" style="color:#64748b; border-color:#cbd5e1;" data-action="switch-auth" data-mode="login">&larr; 로그인으로</button>
+                <div class="auth-header" style="text-align:left; margin-bottom:15px;">
+                    <p style="font-size:13px; color:#64748b; margin-bottom:15px;">이름과 학생 전화번호로 가입 정보를 찾습니다.</p>
+                </div>
+                <form id="form-find-id" style="display:flex; flex-direction:column; width:100%;">
+                    <input type="text" id="find-name" class="auth-input-light" required placeholder="학생 이름">
+                    <input type="tel" id="find-phone" class="auth-input-light" required placeholder="학생 전화번호">
+                    <button type="submit" class="btn-light-submit">아이디 찾기</button>
+                </form>
+            </div>
+
+            <div class="auth-modal hidden" id="modal-reset-pw" style="background:white; color:#1e293b;">
+                <button class="btn-back" style="color:#64748b; border-color:#cbd5e1;" data-action="switch-auth" data-mode="login">&larr; 로그인으로</button>
+                <div class="auth-header" style="text-align:left; margin-bottom:15px;">
+                    <p style="font-size:13px; color:#64748b; margin-bottom:15px;">아이디와 학생 전화번호로 본인 확인 후 새 비밀번호를 설정합니다.</p>
+                </div>
+                <form id="form-reset-pw" style="display:flex; flex-direction:column; width:100%;">
+                    <input type="text" id="reset-id" class="auth-input-light" required placeholder="아이디">
+                    <input type="tel" id="reset-phone" class="auth-input-light" required placeholder="학생 전화번호 (본인 확인)">
+                    <input type="password" id="reset-new-pw" class="auth-input-light" required placeholder="새 비밀번호 (4자 이상)">
+                    <input type="password" id="reset-new-pw-confirm" class="auth-input-light" required placeholder="새 비밀번호 확인">
+                    <button type="submit" class="btn-light-submit">비밀번호 변경</button>
+                </form>
             </div>
 
             <div class="auth-modal hidden" id="modal-register">
@@ -94,7 +124,8 @@
                 <form id="form-register" style="display:flex; flex-direction:column; width:100%;">
                     <input type="text" id="reg-name" class="auth-input" required placeholder="실명">
                     <input type="text" id="reg-id" class="auth-input" required placeholder="아이디">
-                    <input type="tel" id="reg-phone" class="auth-input" required placeholder="연락처 (010-0000-0000)">
+                    <input type="tel" id="reg-phone" class="auth-input" required placeholder="학생 전화번호 (010-0000-0000)">
+                    <input type="email" id="reg-email" class="auth-input" placeholder="이메일 (선택 사항)">
                     <div style="display:flex; gap:10px; width:100%;">
                         <input type="password" id="reg-pw" class="auth-input" required placeholder="비밀번호" style="flex:1;">
                         <input type="password" id="reg-pw-confirm" class="auth-input" required placeholder="비밀번호 확인" style="flex:1;">
@@ -124,7 +155,16 @@
                     🔔<span id="notif-badge" class="hidden" style="position:absolute; top:-2px; right:-2px; background:red; width:8px; height:8px; border-radius:50%;"></span>
                 </span>
                 <button class="stu-btn-outline" data-action="auth-toggle">로그아웃</button>
-                <div id="notif-dropdown" class="notif-box hidden"><div class="notif-header">최근 알림</div><div id="notif-list" class="notif-list"></div></div>
+                <div id="notif-dropdown" class="notif-box hidden">
+                    <div class="notif-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>최근 알림</span>
+                        <div style="font-size:11px; font-weight:normal; color:#60a5fa;">
+                            <span style="cursor:pointer; margin-right:8px;" data-action="read-all-notif">모두 읽음</span>
+                            <span style="cursor:pointer; color:#ef4444;" data-action="delete-all-notif">모두 삭제</span>
+                        </div>
+                    </div>
+                    <div id="notif-list" class="notif-list"></div>
+                </div>
             </div>
         </header>
         <main class="stu-main" id="student-dash-content"></main>
@@ -139,14 +179,12 @@
         </nav>
 
         <div id="student-auto-popup" class="auto-popup-overlay hidden">
-            <div class="auto-popup-card">
+            <div class="auto-popup-card" style="padding-bottom:15px;">
                 <button class="auto-popup-close" data-action="close-popup">×</button>
-                <div class="auto-popup-tag"><span>☑</span> <span id="pop-tag">이벤트</span></div>
+                <div class="auto-popup-tag"><span>☑</span> <span id="pop-tag">이용 안내</span></div>
                 <h2 class="auto-popup-title" id="pop-title"></h2>
                 <p class="auto-popup-desc" id="pop-desc"></p>
-                <div class="auto-popup-box-white"><div style="font-size:24px;">💬</div><div><strong style="color:black; font-size:14px; display:block; margin-bottom:4px;" id="pop-b1-t"></strong><p style="color:#475569; font-size:12px; line-height:1.4;" id="pop-b1-d"></p></div></div>
-                <div class="auto-popup-box-dark"><div style="font-size:20px;">📞</div><div><strong style="color:white; font-size:14px; display:block; margin-bottom:4px;" id="pop-b2-t"></strong><p style="color:#94a3b8; font-size:12px; line-height:1.4;" id="pop-b2-d"></p></div></div>
-                <button class="auto-popup-btn" id="pop-btn" onclick="window.open(document.getElementById('pop-btn').dataset.url, '_blank')">바로가기 &rarr;</button>
+                <div id="pop-btn-area"></div>
                 <div class="auto-popup-footer" data-action="hide-popup-today">오늘 하루 보지 않기</div>
             </div>
         </div>
@@ -158,8 +196,11 @@
                     <button class="btn-text" style="font-size:24px; color:#64748b; padding:0;" data-action="close-student-edit">×</button>
                 </div>
                 <form id="form-student-edit">
-                    <input type="text" id="stu-edit-name" class="auth-input" required placeholder="실명">
+                    <input type="text" id="stu-edit-name" class="auth-input" required placeholder="학생명">
+                    <input type="text" id="stu-edit-id" class="auth-input" style="background:#0f172a; cursor:not-allowed;" readonly placeholder="현재 접속중인 아이디">
                     <input type="password" id="stu-edit-pw" class="auth-input" placeholder="새 비밀번호 (변경 시에만 입력)">
+                    <input type="tel" id="stu-edit-phone" class="auth-input" placeholder="학생 전화번호">
+                    <input type="email" id="stu-edit-email" class="auth-input" placeholder="이메일 주소">
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="stu-edit-school" class="auth-input" placeholder="학교명 (예: 대화고)">
                         <select id="stu-edit-grade" class="auth-input" style="color:white; font-weight:bold;">
@@ -236,7 +277,7 @@
 
     <a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" class="kakao-fab global-element">
         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C6.477 3 2 6.582 2 11c0 2.535 1.451 4.793 3.693 6.223-.23.864-1.123 3.23-1.168 3.424-.055.234.086.338.256.224.218-.146 3.447-2.316 4.8-3.234.782.203 1.597.311 2.42.311 5.523 0 10-3.582 10-8s-4.477-8-10-8z" fill="#000000"/></svg>
-        카톡 문의
+        <span>카톡 상담</span>
     </a>
 
     <div id="modal-ai-report" class="modal-overlay hidden">
@@ -245,9 +286,9 @@
                 <h2 class="modal-title" style="margin:0;">📝 AI 주간 분석 리포트</h2>
                 <button class="btn-text" style="font-size:24px; color:#64748b; padding:0;" data-action="close-ai-modal">×</button>
             </div>
-            <p style="color:#94a3b8; font-size:13px; margin-bottom:15px;">해당 학생의 학습 내역을 바탕으로 AI가 리포트를 자동 분석합니다.</p>
-            <button class="btn-outline btn-block" style="margin-bottom:15px; color:#60a5fa; border-color:#60a5fa;" data-action="generate-ai-text">✨ AI 자동 작성하기 (클릭)</button>
-            <textarea id="ai-report-textarea" class="auth-input" style="height:200px; font-size:14px; line-height:1.6; resize:none;" placeholder="작성된 리포트가 이곳에 표시됩니다. 수정 후 발송할 수 있습니다."></textarea>
+            <p style="color:#94a3b8; font-size:13px; margin-bottom:15px;">해당 학생의 상세 데이터를 기반으로 개인화된 AI 리포트가 생성됩니다.</p>
+            <button class="btn-outline btn-block" style="margin-bottom:15px; color:#60a5fa; border-color:#60a5fa;" data-action="generate-ai-text">✨ AI 자동 분석 시작 (클릭)</button>
+            <textarea id="ai-report-textarea" class="auth-input" style="height:250px; font-size:14px; line-height:1.6; resize:none;" placeholder="작성된 맞춤 리포트가 이곳에 표시됩니다. 수정 후 발송할 수 있습니다."></textarea>
             <button class="btn-primary btn-block" style="margin-top:10px;" data-action="send-ai-report">분석 리포트 발송하기</button>
         </div>
     </div>
