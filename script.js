@@ -38,15 +38,17 @@ const AppState = {
 let rbTimer = null; 
 let currentBannerIdx = 0;
 let rbsData = [];
+let cropper = null;
+let currentCropIdx = -1;
 
-// 유틸리티
+// ------------------------- 유틸리티 -------------------------
 function showToast(msg) { const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; c.appendChild(t); setTimeout(() => t.remove(), 2500); }
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 function clearLectureTimer() { if(AppState.lectureTimer) { clearInterval(AppState.lectureTimer); AppState.lectureTimer = null; } }
 function clearBannerTimer() { if(rbTimer) { clearInterval(rbTimer); rbTimer = null; } }
 function normalizeSchool(name) { let s = name.trim(); if(s && s.endsWith('고')) s += '등학교'; return s; }
 
-// 파이어베이스 데이터 동기화
+// ------------------------- 파이어베이스 동기화 -------------------------
 const dbRef = ref(db, 'studycampus_data');
 onValue(dbRef, (snapshot) => {
     const serverData = snapshot.val();
@@ -57,18 +59,14 @@ onValue(dbRef, (snapshot) => {
     const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT');
     const isModalOpen = document.querySelector('.modal-overlay:not(.hidden)') !== null;
     
-    // 🔥 [수정됨] 타이핑 상태가 아니면 랜딩페이지 및 뷰를 무조건 리렌더하여 관리자 설정이 즉각 반영되도록 함. 
-    // 단, 관리자 설정화면 자체를 엎어버리지 않게 보호 로직 추가
     if (!isTyping && !isModalOpen) {
-        renderLandingPage(); 
-        if (!(AppState.currentView === 'admin' && (AppState.adminTab === 'settings' || AppState.adminTab === 'deploy'))) {
-             renderCurrentView();
-        }
+        if(AppState.currentView === 'landing') renderLandingPage();
+        renderCurrentView();
     }
 });
 function syncData() { set(dbRef, AppState.data); }
 
-// 라우팅 (메뉴 탭별 독립 페이지 처리)
+// ------------------------- 라우팅 -------------------------
 function switchView(viewName) {
     clearLectureTimer(); 
     if(viewName !== 'landing') clearBannerTimer();
@@ -116,7 +114,7 @@ function renderCurrentView() {
     else if (AppState.currentView === 'lecture-player' && AppState.currentUser) renderLecturePlayer();
 }
 
-// 롤링 배너 컨트롤러
+// ------------------------- 배너 컨트롤러 -------------------------
 function startBanner() {
     clearBannerTimer();
     if(rbsData.length <= 1) return;
@@ -142,7 +140,7 @@ function renderLandingPage() {
     document.getElementById('ld-s1-n').textContent = ld.s1Num || ''; document.getElementById('ld-s1-t').textContent = ld.s1Txt || ''; document.getElementById('ld-s2-n').textContent = ld.s2Num || ''; document.getElementById('ld-s2-t').textContent = ld.s2Txt || ''; document.getElementById('ld-s3-n').textContent = ld.s3Num || ''; document.getElementById('ld-s3-t').textContent = ld.s3Txt || '';
     document.getElementById('ld-sec-title').textContent = ld.secTitle || ''; document.getElementById('ld-f1-b').textContent = ld.f1Badge || ''; document.getElementById('ld-f1-b').className = 'badge-' + (ld.f1Col || 'blue'); document.getElementById('ld-f1-t').textContent = ld.f1Title || ''; document.getElementById('ld-f1-d').textContent = ld.f1Desc || ''; document.getElementById('ld-f1-e').textContent = ld.f1Emoji || ''; document.getElementById('ld-f2-b').textContent = ld.f2Badge || ''; document.getElementById('ld-f2-b').className = 'badge-' + (ld.f2Col || 'red'); document.getElementById('ld-f2-t').textContent = ld.f2Title || ''; document.getElementById('ld-f2-d').textContent = ld.f2Desc || ''; document.getElementById('ld-f2-e').textContent = ld.f2Emoji || ''; document.getElementById('ld-bot-title').textContent = ld.botTitle || '';
     
-    // 롤링 배너 세팅
+    // 롤링 배너 렌더링
     rbsData = AppState.data.settings?.rollingBanners || [];
     const tabsContainer = document.getElementById('mega-banner-tabs');
     const viewContainer = document.getElementById('mega-banner-view');
@@ -195,7 +193,6 @@ function renderStudentDashboard() {
 
     document.querySelectorAll('#student-bottom-nav .stu-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === studentTab));
     
-    // 알림 표시 (모두 읽음 / 삭제 버튼 포함)
     const notifList = document.getElementById('notif-list');
     const myAlerts = (data.alerts || []).filter(a => a.studentId === me.id);
     const globalNotices = (data.notices || []).map(n => ({...n, type: 'notice'}));
@@ -413,7 +410,7 @@ function renderLecturePlayer() {
         clearLectureTimer();
         let currentProg = prog.percent;
         AppState.lectureTimer = setInterval(() => {
-            currentProg += 5;
+            currentProg += 5; 
             const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
             if (currentProg >= 90) { 
                 currentProg = 100; clearLectureTimer(); 
@@ -446,9 +443,10 @@ function renderAdminDashboard() {
     } 
     else if (tab === 'deploy') {
         const currentMaxWeek = (data.homework && data.homework.length > 0) ? Math.max(...data.homework.map(h => parseInt(h.week) || 1)) : 1;
+
         html += `
             <div class="admin-card" style="grid-column:1/-1;"><h2>📢 공지 배포 (모든 학생 알림)</h2><form id="form-admin-notice"><input type="text" id="adm-notice-title" class="admin-input" required placeholder="공지 제목"><textarea id="adm-notice-content" class="admin-input" style="height:100px; resize:none;" required placeholder="내용"></textarea><button type="submit" class="btn-primary" style="width:100%;">공지 올리기</button></form></div>
-            <div class="admin-card" style="grid-column:1/-1;"><h2>📝 주간 과제 배포 및 관리</h2><div style="background:#0f172a; padding:15px; border-radius:8px; margin-bottom:20px; font-size:13px; color:#94a3b8; line-height:1.5;">💡 현재 배포된 가장 최신 주차는 <strong style="color:#60a5fa; font-size:15px;">${currentMaxWeek}주차</strong> 입니다.<br>새로운 주차 번호를 배포하면 학생들이 앱을 열 때 자동으로 해당 주차로 화면이 갱신됩니다.</div><form id="form-admin-hw"><select id="hw-target" class="admin-input"><option value="all">전체 배포</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select><div style="display:flex; gap:10px;"><div style="flex:1;"><label class="admin-label">주차 번호 (숫자만 기입)</label><input type="number" id="hw-week" class="admin-input" value="${currentMaxWeek}" required style="margin:0;"></div><div style="flex:1;"><label class="admin-label">숙제 제출 날짜 (달력 선택 시 자동 요일 계산)</label><input type="date" id="hw-date" class="admin-input" required style="margin:0;"></div></div><textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px; margin-top:10px;"></textarea><button type="submit" class="btn-primary" style="width:100%;">새 숙제 배포하기</button></form><h3 style="margin-top:40px; margin-bottom:15px; color:#60a5fa; font-size:15px; border-bottom:1px solid #334155; padding-bottom:10px;">등록된 과제 목록 관리 (수정/삭제)</h3><div class="table-responsive"><table class="admin-table" style="min-width:600px;"><thead><tr><th>주차</th><th>날짜(요일)</th><th>내용</th><th>대상</th><th>관리</th></tr></thead><tbody>`;
+            <div class="admin-card" style="grid-column:1/-1;"><h2>📝 주간 과제 배포 및 관리</h2><div style="background:#0f172a; padding:15px; border-radius:8px; margin-bottom:20px; font-size:13px; color:#94a3b8; line-height:1.5;">💡 현재 배포된 가장 최신 주차는 <strong style="color:#60a5fa; font-size:15px;">${currentMaxWeek}주차</strong> 입니다.<br>새로운 주차 번호를 배포하면 학생들이 앱을 열 때 자동으로 해당 주차로 화면이 갱신됩니다. (이전 주차 내용도 언제든 추가/수정 가능)</div><form id="form-admin-hw"><select id="hw-target" class="admin-input"><option value="all">전체 배포</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select><div style="display:flex; gap:10px;"><div style="flex:1;"><label class="admin-label">주차 번호 (숫자만 기입)</label><input type="number" id="hw-week" class="admin-input" value="${currentMaxWeek}" required style="margin:0;"></div><div style="flex:1;"><label class="admin-label">숙제 제출 날짜 (달력 선택 시 자동 요일 계산)</label><input type="date" id="hw-date" class="admin-input" required style="margin:0;"></div></div><textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px; margin-top:10px;"></textarea><button type="submit" class="btn-primary" style="width:100%;">새 숙제 배포하기</button></form><h3 style="margin-top:40px; margin-bottom:15px; color:#60a5fa; font-size:15px; border-bottom:1px solid #334155; padding-bottom:10px;">등록된 과제 목록 관리 (수정/삭제)</h3><div class="table-responsive"><table class="admin-table" style="min-width:600px;"><thead><tr><th>주차</th><th>날짜(요일)</th><th>내용</th><th>대상</th><th>관리</th></tr></thead><tbody>`;
         if(!data.homework || data.homework.length===0) { html += `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">등록된 과제가 없습니다.</td></tr>`; } 
         else { const sortedHw = [...data.homework].sort((a,b) => parseInt(b.week) - parseInt(a.week) || new Date(a.date) - new Date(b.date)); sortedHw.forEach(h => { html += `<tr><td style="font-weight:bold;">${h.week}주차</td><td>${h.date}<br><span style="font-size:11px; color:#94a3b8;">${h.day}</span></td><td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${h.desc}">${h.desc}</td><td>${h.target==='all'?'전체':h.target}</td><td><button class="btn-sm btn-outline" data-action="edit-admin-hw" data-id="${h.id}">내용 수정</button><button class="btn-sm btn-danger" style="background:#ef4444; border:none; margin-left:5px; color:white;" data-action="delete-admin-hw" data-id="${h.id}">삭제</button></td></tr>`; }); }
         html += `</tbody></table></div></div>
@@ -466,7 +464,6 @@ function renderAdminDashboard() {
     else if (tab === 'settings') {
         const pop = set.popup;
         const rbs = set.rollingBanners || [];
-        // 🔥 관리자 에디터
         html += `
         <div class="admin-card" style="grid-column:1/-1;">
             <h2 style="margin-bottom:20px; color:#60a5fa;">📲 시스템 (배너/안내 문구) 설정</h2>
@@ -501,9 +498,10 @@ function renderAdminDashboard() {
         <div class="admin-card" style="grid-column:1/-1;">
             <h2 style="margin-bottom:20px; color:#60a5fa;">🌐 랜딩(홈페이지) 실시간 편집</h2>
             <form id="form-admin-settings" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;">
                     <h3 style="margin-bottom:15px; font-size:1rem; color:white;">🔄 랜딩페이지 롤링 배너 설정 (최대 5개)</h3>
-                    <p style="font-size:13px; color:#94a3b8; margin-bottom:15px;">좌측 메뉴 탭 이름, 이미지 파일, 클릭 시 이동 링크를 입력하세요. 저장을 누르면 즉시 동기화됩니다.</p>
+                    <p style="font-size:13px; color:#94a3b8; margin-bottom:15px;">좌측 메뉴 탭 이름, 이미지 첨부, 이동 링크를 입력하세요.</p>
                     <div style="display:flex; flex-direction:column; gap:15px;">
                         ${[0,1,2,3,4].map(i => {
                             const b = rbs[i] || {tab: '', img: '', link: ''};
@@ -517,7 +515,7 @@ function renderAdminDashboard() {
                                 <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
                                     <input type="file" id="rb${i}-file" class="admin-input banner-file-input" accept="image/*" style="margin:0; padding:8px;">
                                     <input type="hidden" id="rb${i}-existing-img" value="${b.img}">
-                                    ${b.img ? `<img src="${b.img}" style="height:40px; border-radius:4px; border:1px solid #334155;">` : `<span style="font-size:12px; color:#64748b;">이미지 없음</span>`}
+                                    <img id="rb${i}-preview" src="${b.img}" style="height:40px; border-radius:4px; border:1px solid #334155; display:${b.img?'block':'none'};">
                                 </div>
                             </div>
                             `;
@@ -568,6 +566,28 @@ function renderAdminDashboard() {
 // [통합 위임 핸들러 (클릭/파일/제출)]
 // =========================================================
 document.body.addEventListener('change', async (e) => {
+    // 🔥 이미지 자르기(Cropper) 연동
+    if (e.target.classList.contains('banner-file-input')) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const imgTarget = document.getElementById('crop-image-target');
+            imgTarget.src = ev.target.result;
+            currentCropIdx = e.target.id.replace('rb', '').replace('-file', ''); 
+            
+            document.getElementById('modal-crop').classList.remove('hidden');
+            if(cropper) cropper.destroy();
+            cropper = new Cropper(imgTarget, {
+                aspectRatio: 21 / 9, 
+                viewMode: 1,
+            });
+        };
+        reader.readAsDataURL(file);
+        e.target.value = ''; 
+        return;
+    }
+
     if (e.target.matches('input[type="file"]')) {
         const files = Array.from(e.target.files || []);
         if(files.length === 0) return;
@@ -576,12 +596,7 @@ document.body.addEventListener('change', async (e) => {
         showToast("파일 처리 중...");
         try {
             const b64 = await Promise.all(files.map(f => new Promise(res => { const r = new FileReader(); r.onload = ev => res({ name: f.name, data: ev.target.result }); r.readAsDataURL(f); })));
-            
-            // 배너 이미지 첨부 캐치
-            if (e.target.classList.contains('banner-file-input')) {
-                e.target.dataset.base64 = b64[0].data; showToast("✅ 배너 이미지 첨부 완료");
-            }
-            else if (e.target.id === 'pay-req-file') { e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료"); } 
+            if (e.target.id === 'pay-req-file') { e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료"); } 
             else if (e.target.dataset.hwid) { if(!AppState.data.hwSubmissions) AppState.data.hwSubmissions = []; AppState.data.hwSubmissions.push({ id: generateId(), hwId: e.target.dataset.hwid, studentId: AppState.currentUser.id, studentName: AppState.currentUser.name, files: b64, status: 'pending' }); syncData(); showToast("✅ 숙제 제출 완료!"); }
         } catch (err) { showToast("❌ 파일 업로드 오류가 발생했습니다."); }
     }
@@ -593,15 +608,33 @@ document.body.addEventListener('click', (e) => {
         if (!actionNode) return;
         const action = actionNode.dataset.action;
 
-        // 배너 탭 클릭 로직
-        if (action === 'change-banner') {
-            currentBannerIdx = parseInt(actionNode.dataset.idx);
-            updateBannerUI();
-            startBanner();
+        // 🔥 이미지 크롭 모달 컨트롤
+        if (action === 'close-crop') {
+            document.getElementById('modal-crop').classList.add('hidden');
+            if(cropper) { cropper.destroy(); cropper = null; }
         }
+        else if (action === 'apply-crop') {
+            if(!cropper) return;
+            const croppedDataUrl = cropper.getCroppedCanvas({ width: 1200 }).toDataURL('image/jpeg', 0.8);
+            
+            const existingInput = document.getElementById(`rb${currentCropIdx}-existing-img`);
+            const previewImg = document.getElementById(`rb${currentCropIdx}-preview`);
+            
+            if (existingInput) existingInput.value = croppedDataUrl;
+            if (previewImg) {
+                previewImg.src = croppedDataUrl;
+                previewImg.style.display = 'block';
+            }
+            
+            document.getElementById('modal-crop').classList.add('hidden');
+            cropper.destroy(); cropper = null;
+            showToast("✅ 이미지 자르기 완료 (저장 버튼을 눌러야 반영됩니다)");
+        }
+        
+        else if (action === 'change-banner') { currentBannerIdx = parseInt(actionNode.dataset.idx); updateBannerUI(); startBanner(); }
         else if (action === 'nav') switchView(actionNode.dataset.target);
         else if (action === 'auth-toggle') {
-            if(AppState.currentUser) { AppState.currentUser = null; localStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); }
+            if(AppState.currentUser) { AppState.currentUser = null; sessionStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); }
             else { switchView('auth'); switchAuthMode('login'); }
         }
         else if (action === 'auth-register') {
@@ -625,17 +658,8 @@ document.body.addEventListener('click', (e) => {
         }
         else if (action === 'close-student-edit') { document.getElementById('modal-student-edit').classList.add('hidden'); }
         else if (action === 'toggle-notif') { const drop = document.getElementById('notif-dropdown'); if(drop) { drop.classList.toggle('hidden'); } }
-        else if (action === 'read-all-notif') {
-            let upd = false;
-            (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }});
-            if(upd) { syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("모두 읽음 처리되었습니다."); renderStudentDashboard(); }
-        }
-        else if (action === 'delete-all-notif') {
-            if(confirm("모든 알림을 삭제하시겠습니까?")) {
-                AppState.data.alerts = (AppState.data.alerts||[]).filter(a => a.studentId !== AppState.currentUser.id);
-                syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("알림이 모두 삭제되었습니다."); renderStudentDashboard();
-            }
-        }
+        else if (action === 'read-all-notif') { let upd = false; (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }}); if(upd) { syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("모두 읽음 처리되었습니다."); renderStudentDashboard(); } }
+        else if (action === 'delete-all-notif') { if(confirm("모든 알림을 삭제하시겠습니까?")) { AppState.data.alerts = (AppState.data.alerts||[]).filter(a => a.studentId !== AppState.currentUser.id); syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("알림이 모두 삭제되었습니다."); renderStudentDashboard(); } }
         else if (action === 'close-popup') { document.getElementById('student-auto-popup').classList.add('hidden'); sessionStorage.setItem('studycampus_popup_shown', 'true'); }
         else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 보지 않습니다."); }
         else if (action === 'change-week') { const dir = parseInt(actionNode.dataset.dir); let newWeek = AppState.currentHwWeekNumber + dir; if (newWeek < 1) newWeek = 1; AppState.currentHwWeekNumber = newWeek; renderStudentDashboard(); }
@@ -655,7 +679,7 @@ document.body.addEventListener('click', (e) => {
             
             AppState.lectureTimer = setInterval(() => {
                 currentProg += 5; 
-                if (currentProg >= 90) { currentProg = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 90% 달성 완료!"); renderLecturePlayer(); } 
+                if (currentProg >= 90) { currentProg = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 수강 완료 인정!"); renderLecturePlayer(); } 
                 else { AppState.data.users[userIdx].lectureProgress[lecId] = { percent: currentProg, done: false }; }
                 const bar = document.getElementById('live-progress-bar'); const txt = document.getElementById('live-progress-text');
                 if(bar) bar.style.width = currentProg + '%'; if(txt) txt.textContent = currentProg + '%';
@@ -663,7 +687,7 @@ document.body.addEventListener('click', (e) => {
         }
         else if (action === 'trigger-file') { const fi = document.getElementById(`hw-file-${actionNode.dataset.id}`); if(fi) fi.click(); }
         else if (action === 'cancel-hw') { AppState.data.hwSubmissions = AppState.data.hwSubmissions.filter(s => s.id !== actionNode.dataset.subid); syncData(); showToast("기존 제출본 삭제됨"); }
-        else if (action === 'delete-account') { if(confirm("탈퇴하시면 현재까지 모든 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴하시겠습니까?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); sessionStorage.removeItem('studycampus_session'); localStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
+        else if (action === 'delete-account') { if(confirm("탈퇴하시면 현재까지 모든 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴하시겠습니까?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); sessionStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
         
         // 관리자
         else if (action === 'edit-admin-hw') { const hw = AppState.data.homework.find(h => h.id === actionNode.dataset.id); if(hw) { const newDesc = prompt("과제 내용을 수정하세요:", hw.desc); if(newDesc !== null && newDesc.trim() !== "") { hw.desc = newDesc.trim(); syncData(); showToast("수정되었습니다."); renderAdminDashboard(); } } }
@@ -714,7 +738,7 @@ document.body.addEventListener('click', (e) => {
     } catch(err) { console.error("클릭 이벤트 내부 에러 처리:", err); }
 });
 
-// 폼(Form) 제출 이벤트
+// 폼(Form) 제출 이벤트 제어
 document.body.addEventListener('submit', async (e) => {
     e.preventDefault();
     if(document.activeElement) document.activeElement.blur(); 
@@ -829,14 +853,8 @@ document.body.addEventListener('submit', async (e) => {
                 for(let i=0; i<5; i++) {
                     const tab = document.getElementById(`rb${i}-tab`).value.trim();
                     const link = document.getElementById(`rb${i}-link`).value.trim();
-                    const fileInput = document.getElementById(`rb${i}-file`);
                     const existingImg = document.getElementById(`rb${i}-existing-img`).value;
-
-                    let img = existingImg;
-                    if(fileInput && fileInput.dataset.base64) {
-                        img = fileInput.dataset.base64;
-                    }
-                    if(tab || img) { rb.push({tab, img, link}); }
+                    if(tab || existingImg) { rb.push({tab, img: existingImg, link}); }
                 }
                 AppState.data.settings.rollingBanners = rb;
 
@@ -854,12 +872,24 @@ document.body.addEventListener('submit', async (e) => {
     }
 });
 
-// 앱 접속 시 자동 로그아웃 적용
+// 🔥 새로고침 시 로그인(세션) 자동 유지, 창 닫으면 자동 로그아웃되도록 적용 완료
 document.addEventListener('DOMContentLoaded', () => {
-    sessionStorage.removeItem('studycampus_session');
-    localStorage.removeItem('studycampus_session');
-    AppState.currentUser = null;
-    
-    document.querySelectorAll('.global-element').forEach(el => el.classList.remove('hidden'));
-    switchView('landing');
+    try {
+        const session = sessionStorage.getItem('studycampus_session');
+        if (session) AppState.currentUser = JSON.parse(session);
+    } catch (e) {}
+
+    if (AppState.currentUser) {
+        document.querySelectorAll('.global-element').forEach(el => el.classList.add('hidden'));
+        if (AppState.currentUser.role === 'admin') {
+            AppState.adminTab = 'users';
+            switchView('admin');
+        } else {
+            AppState.studentTab = 'home';
+            switchView('student');
+        }
+    } else {
+        document.querySelectorAll('.global-element').forEach(el => el.classList.remove('hidden'));
+        switchView('landing');
+    }
 });
