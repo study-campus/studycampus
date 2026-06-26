@@ -45,9 +45,12 @@
                     <div class="hero-icon">🚀</div>
                 </div>
 
-                <div class="rolling-banner-wrapper">
-                    <div class="rolling-banner-track" id="rolling-banner-track">
+                <div class="mega-banner-wrapper">
+                    <div class="mega-banner-tabs" id="mega-banner-tabs">
                         </div>
+                    <div class="mega-banner-view" id="mega-banner-view" onclick="if(this.dataset.link && this.dataset.link !== '#') window.open(this.dataset.link, '_blank')">
+                        <img id="mega-banner-img" src="" alt="Promo Banner">
+                    </div>
                 </div>
 
                 <h2 class="section-title" id="ld-sec-title"></h2>
@@ -89,7 +92,7 @@
                     <p style="font-weight:700;">로그인</p>
                 </div>
                 <form id="form-login" style="display:flex; flex-direction:column; width:100%; align-items:center;">
-                    <input type="text" id="login-id" class="auth-input" required placeholder="아이디 또는 연락처">
+                    <input type="text" id="login-id" class="auth-input" required placeholder="아이디">
                     <input type="password" id="login-pw" class="auth-input" required placeholder="비밀번호">
                     <button type="submit" class="btn-primary auth-submit">로그인</button>
                 </form>
@@ -97,6 +100,9 @@
                     <span data-action="switch-auth" data-mode="find-id" style="cursor:pointer; color:var(--text-muted);">아이디 찾기</span>
                     <span style="color:var(--text-muted);">|</span>
                     <span data-action="switch-auth" data-mode="reset-pw" style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span>
+                </div>
+                <div style="text-align:center; margin-top:15px;">
+                    <span data-action="switch-auth" data-mode="register" style="cursor:pointer; color:#60a5fa; font-weight:bold;">회원가입</span>
                 </div>
             </div>
 
@@ -107,7 +113,7 @@
                 </div>
                 <form id="form-find-id" style="display:flex; flex-direction:column; width:100%;">
                     <input type="text" id="find-name" class="auth-input" required placeholder="학생 이름">
-                    <input type="tel" id="find-phone" class="auth-input" required placeholder="학생 전화번호">
+                    <input type="tel" id="find-phone" class="auth-input" required placeholder="학생 전화번호 (010-0000-0000)">
                     <button type="submit" class="btn-primary auth-submit" style="background:#2563eb;">아이디 찾기</button>
                 </form>
             </div>
@@ -151,6 +157,9 @@
                     </div>
                     <button type="submit" class="btn-primary auth-submit" style="margin-top:10px;">가입 완료</button>
                 </form>
+                <div style="text-align:center; margin-top:20px;">
+                    <span data-action="switch-auth" data-mode="login" style="cursor:pointer; color:var(--text-muted); font-size:13px; text-decoration:underline;">이미 계정이 있으신가요? 로그인</span>
+                </div>
             </div>
         </section>
     </main>
@@ -207,7 +216,7 @@
                     <input type="text" id="stu-edit-name" class="auth-input" required placeholder="학생명">
                     <input type="text" id="stu-edit-id" class="auth-input" style="background:#0f172a; cursor:not-allowed; color:#94a3b8;" readonly placeholder="현재 접속중인 아이디">
                     <input type="password" id="stu-edit-pw" class="auth-input" placeholder="새 비밀번호 (변경 시에만 입력)">
-                    <input type="tel" id="stu-edit-phone" class="auth-input" placeholder="학생 전화번호 (ex: 010-1234-5678)">
+                    <input type="tel" id="stu-edit-phone" class="auth-input" placeholder="학생 전화번호">
                     <input type="email" id="stu-edit-email" class="auth-input" placeholder="이메일 주소">
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="stu-edit-school" class="auth-input" placeholder="학교명 (예: 대화고)">
