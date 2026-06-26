@@ -24,6 +24,7 @@
     </header>
 
     <main class="global-element" style="flex:1; display:flex; flex-direction:column;">
+        
         <section id="view-landing" class="view" style="flex:1;">
             <div class="landing-container">
                 <div class="hero-banner">
@@ -37,11 +38,16 @@
                             <div><strong id="ld-s3-n"></strong><br><span id="ld-s3-t"></span></div>
                         </div>
                         <div class="hero-btns">
-                            <button class="btn-white" data-action="nav" data-target="auth">상담 신청</button>
+                            <button class="btn-white" data-action="nav" data-target="auth">무료 상담 신청</button>
                             <button class="btn-white-outline" data-action="nav" data-target="auth">학생 로그인</button>
                         </div>
                     </div>
                     <div class="hero-icon">🚀</div>
+                </div>
+
+                <div class="rolling-banner-wrapper">
+                    <div class="rolling-banner-track" id="rolling-banner-track">
+                        </div>
                 </div>
 
                 <h2 class="section-title" id="ld-sec-title"></h2>
@@ -56,16 +62,24 @@
                     </div>
                 </div>
             </div>
-            
             <div class="bottom-cta-banner">
                 <h2 id="ld-bot-title"></h2>
                 <button class="btn-white" data-action="nav" data-target="auth" style="color:var(--primary); margin-top:20px;">학습 시작하기</button>
             </div>
         </section>
 
-        <section id="view-why" class="view hidden" style="flex:1; display:flex; justify-content:center; align-items:center;"><h2>왜 StudyCampus? 페이지 준비중</h2></section>
-        <section id="view-system" class="view hidden" style="flex:1; display:flex; justify-content:center; align-items:center;"><h2>학습 시스템 페이지 준비중</h2></section>
-        <section id="view-curriculum" class="view hidden" style="flex:1; display:flex; justify-content:center; align-items:center;"><h2>커리큘럼 페이지 준비중</h2></section>
+        <section id="view-why" class="view hidden" style="flex:1; padding:80px 20px; text-align:center;">
+            <h1 style="font-size:2.5rem; margin-bottom:20px; color:#60a5fa;">왜 StudyCampus 인가요?</h1>
+            <p style="color:var(--text-muted); font-size:1.1rem; max-width:600px; margin:0 auto; line-height:1.6;">일방적인 인강의 한계를 넘어, 1:1 밀착 관리와 데이터 기반의 맞춤형 학습 피드백을 제공하여 학생의 성적 향상을 이끕니다.</p>
+        </section>
+        <section id="view-system" class="view hidden" style="flex:1; padding:80px 20px; text-align:center;">
+            <h1 style="font-size:2.5rem; margin-bottom:20px; color:#10b981;">학습 시스템 안내</h1>
+            <p style="color:var(--text-muted); font-size:1.1rem; max-width:600px; margin:0 auto; line-height:1.6;">과제 제출부터 강의 시청, 성취도 모니터링까지 모든 과정이 클라우드 대시보드를 통해 실시간으로 관리됩니다.</p>
+        </section>
+        <section id="view-curriculum" class="view hidden" style="flex:1; padding:80px 20px; text-align:center;">
+            <h1 style="font-size:2.5rem; margin-bottom:20px; color:#fbbf24;">커리큘럼</h1>
+            <p style="color:var(--text-muted); font-size:1.1rem; max-width:600px; margin:0 auto; line-height:1.6;">기초 개념 확립부터 고난도 기출 분석, 그리고 실전 모의고사까지 완벽한 단계별 커리큘럼을 제공합니다.</p>
+        </section>
 
         <section id="view-auth" class="view hidden auth-wrapper">
             <div class="auth-modal" id="modal-login">
@@ -75,7 +89,7 @@
                     <p style="font-weight:700;">로그인</p>
                 </div>
                 <form id="form-login" style="display:flex; flex-direction:column; width:100%; align-items:center;">
-                    <input type="text" id="login-id" class="auth-input" required placeholder="아이디">
+                    <input type="text" id="login-id" class="auth-input" required placeholder="아이디 또는 연락처">
                     <input type="password" id="login-pw" class="auth-input" required placeholder="비밀번호">
                     <button type="submit" class="btn-primary auth-submit">로그인</button>
                 </form>
@@ -84,34 +98,31 @@
                     <span style="color:var(--text-muted);">|</span>
                     <span data-action="switch-auth" data-mode="reset-pw" style="cursor:pointer; color:var(--text-muted);">비밀번호 찾기</span>
                 </div>
-                <div style="text-align:center; margin-top:15px;">
-                    <span data-action="switch-auth" data-mode="register" style="cursor:pointer; color:#60a5fa; font-weight:bold;">회원가입</span>
-                </div>
             </div>
 
-            <div class="auth-modal hidden" id="modal-find-id" style="background:white; color:#1e293b;">
-                <button class="btn-back" style="color:#64748b; border-color:#cbd5e1;" data-action="switch-auth" data-mode="login">&larr; 로그인으로</button>
-                <div class="auth-header" style="text-align:left; margin-bottom:15px;">
-                    <p style="font-size:13px; color:#64748b; margin-bottom:15px;">이름과 학생 전화번호로 가입 정보를 찾습니다.</p>
+            <div class="auth-modal hidden" id="modal-find-id">
+                <button class="btn-back" data-action="switch-auth" data-mode="login">&larr; 로그인으로</button>
+                <div class="auth-header" style="text-align:left; margin-bottom:15px; margin-top:10px;">
+                    <p style="font-size:14px; color:#cbd5e1; margin-bottom:15px; font-weight:600;">이름과 학생 전화번호로 가입 정보를 찾습니다.</p>
                 </div>
                 <form id="form-find-id" style="display:flex; flex-direction:column; width:100%;">
-                    <input type="text" id="find-name" class="auth-input-light" required placeholder="학생 이름">
-                    <input type="tel" id="find-phone" class="auth-input-light" required placeholder="학생 전화번호">
-                    <button type="submit" class="btn-light-submit">아이디 찾기</button>
+                    <input type="text" id="find-name" class="auth-input" required placeholder="학생 이름">
+                    <input type="tel" id="find-phone" class="auth-input" required placeholder="학생 전화번호">
+                    <button type="submit" class="btn-primary auth-submit" style="background:#2563eb;">아이디 찾기</button>
                 </form>
             </div>
 
-            <div class="auth-modal hidden" id="modal-reset-pw" style="background:white; color:#1e293b;">
-                <button class="btn-back" style="color:#64748b; border-color:#cbd5e1;" data-action="switch-auth" data-mode="login">&larr; 로그인으로</button>
-                <div class="auth-header" style="text-align:left; margin-bottom:15px;">
-                    <p style="font-size:13px; color:#64748b; margin-bottom:15px;">아이디와 학생 전화번호로 본인 확인 후 새 비밀번호를 설정합니다.</p>
+            <div class="auth-modal hidden" id="modal-reset-pw">
+                <button class="btn-back" data-action="switch-auth" data-mode="login">&larr; 로그인으로</button>
+                <div class="auth-header" style="text-align:left; margin-bottom:15px; margin-top:10px;">
+                    <p style="font-size:14px; color:#cbd5e1; margin-bottom:15px; font-weight:600;">아이디와 학생 전화번호로 본인 확인 후 새 비밀번호를 설정합니다.</p>
                 </div>
                 <form id="form-reset-pw" style="display:flex; flex-direction:column; width:100%;">
-                    <input type="text" id="reset-id" class="auth-input-light" required placeholder="아이디">
-                    <input type="tel" id="reset-phone" class="auth-input-light" required placeholder="학생 전화번호 (본인 확인)">
-                    <input type="password" id="reset-new-pw" class="auth-input-light" required placeholder="새 비밀번호 (4자 이상)">
-                    <input type="password" id="reset-new-pw-confirm" class="auth-input-light" required placeholder="새 비밀번호 확인">
-                    <button type="submit" class="btn-light-submit">비밀번호 변경</button>
+                    <input type="text" id="reset-id" class="auth-input" required placeholder="아이디">
+                    <input type="tel" id="reset-phone" class="auth-input" required placeholder="학생 전화번호 (본인 확인)">
+                    <input type="password" id="reset-new-pw" class="auth-input" required placeholder="새 비밀번호 (4자 이상)">
+                    <input type="password" id="reset-new-pw-confirm" class="auth-input" required placeholder="새 비밀번호 확인">
+                    <button type="submit" class="btn-primary auth-submit" style="background:#2563eb;">비밀번호 변경</button>
                 </form>
             </div>
 
@@ -140,9 +151,6 @@
                     </div>
                     <button type="submit" class="btn-primary auth-submit" style="margin-top:10px;">가입 완료</button>
                 </form>
-                <div style="text-align:center; margin-top:20px;">
-                    <span data-action="switch-auth" data-mode="login" style="cursor:pointer; color:var(--text-muted); font-size:13px; text-decoration:underline;">이미 계정이 있으신가요? 로그인</span>
-                </div>
             </div>
         </section>
     </main>
@@ -197,9 +205,9 @@
                 </div>
                 <form id="form-student-edit">
                     <input type="text" id="stu-edit-name" class="auth-input" required placeholder="학생명">
-                    <input type="text" id="stu-edit-id" class="auth-input" style="background:#0f172a; cursor:not-allowed;" readonly placeholder="현재 접속중인 아이디">
+                    <input type="text" id="stu-edit-id" class="auth-input" style="background:#0f172a; cursor:not-allowed; color:#94a3b8;" readonly placeholder="현재 접속중인 아이디">
                     <input type="password" id="stu-edit-pw" class="auth-input" placeholder="새 비밀번호 (변경 시에만 입력)">
-                    <input type="tel" id="stu-edit-phone" class="auth-input" placeholder="학생 전화번호">
+                    <input type="tel" id="stu-edit-phone" class="auth-input" placeholder="학생 전화번호 (ex: 010-1234-5678)">
                     <input type="email" id="stu-edit-email" class="auth-input" placeholder="이메일 주소">
                     <div style="display:flex; gap:10px;">
                         <input type="text" id="stu-edit-school" class="auth-input" placeholder="학교명 (예: 대화고)">
@@ -283,7 +291,7 @@
     <div id="modal-ai-report" class="modal-overlay hidden">
         <div class="modal-content" style="max-width:500px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h2 class="modal-title" style="margin:0;">📝 AI 주간 분석 리포트</h2>
+                <h2 class="modal-title" style="margin:0;">📝 주간 분석 리포트</h2>
                 <button class="btn-text" style="font-size:24px; color:#64748b; padding:0;" data-action="close-ai-modal">×</button>
             </div>
             <p style="color:#94a3b8; font-size:13px; margin-bottom:15px;">해당 학생의 상세 데이터를 기반으로 개인화된 AI 리포트가 생성됩니다.</p>
