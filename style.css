@@ -11,6 +11,7 @@ body { background: var(--bg-dark); color: var(--text-main); display: flex; flex-
 .hidden { display: none !important; }
 .logo-font { font-family: 'Caveat', cursive; letter-spacing: 1px; }
 
+/* 공통 버튼 */
 button { cursor: pointer; border: none; outline: none; z-index: 10; position: relative; min-height: 36px;}
 .btn-primary { background: var(--primary); color: white; border-radius: 8px; font-weight: 700; transition: 0.2s; padding: 14px 20px;}
 .btn-primary:hover { background: var(--primary-hover); transform: translateY(-1px); }
@@ -43,6 +44,11 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .hero-icon { font-size: 8rem; animation: float 3s ease-in-out infinite; pointer-events: none;}
 @keyframes float { 0% {transform: translateY(0px);} 50% {transform: translateY(-20px);} 100% {transform: translateY(0px);} }
 
+/* 🔥 랜딩페이지 롤링 배너 CSS */
+.rolling-banner-wrapper { width: 100%; overflow: hidden; border-radius: 16px; margin-bottom: 50px; background: #1e293b; aspect-ratio: 21/9; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid var(--border);}
+.rolling-banner-track { display: flex; width: 100%; height: 100%; transition: transform 0.5s ease-in-out; }
+.rolling-banner-item { min-width: 100%; height: 100%; background-size: cover; background-position: center; background-repeat: no-repeat; cursor: pointer; }
+
 .section-title { text-align: center; font-size: 1.5rem; margin-bottom: 30px; }
 .feature-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
 .f-card { background: var(--bg-card); border: 1px solid var(--border); padding: 30px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; }
@@ -62,12 +68,6 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .auth-input { width: 100%; background: #1e293b; border: 1px solid #334155; color: white; padding: 16px; border-radius: 12px; margin-bottom: 15px; font-size: 1rem; outline: none; transition: 0.2s; box-sizing: border-box; }
 .auth-input:focus { border-color: var(--primary); }
 .auth-submit { width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 12px; margin-top: 10px; display: block; text-align: center; box-sizing: border-box; }
-
-/* 아이디/비밀번호 찾기용 밝은 폼 */
-.auth-input-light { width: 100%; background: white; border: 1px solid #e2e8f0; color: #1e293b; padding: 16px; border-radius: 12px; margin-bottom: 15px; font-size: 1rem; outline: none; transition: 0.2s; box-sizing: border-box; }
-.auth-input-light:focus { border-color: #cbd5e1; }
-.btn-light-submit { width: 100%; padding: 16px; font-size: 1.1rem; border-radius: 12px; margin-top: 10px; background: #e0e7ff; color: #4f46e5; font-weight: 800; display: block; text-align: center; box-sizing: border-box; transition: 0.2s; }
-.btn-light-submit:hover { background: #c7d2fe; }
 
 /* 학생 앱 UI */
 .stu-wrapper { flex: 1; display: flex; flex-direction: column; width: 100%; }
@@ -100,7 +100,7 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .notif-item { padding: 15px; border-bottom: 1px solid #334155; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: 0.2s; }
 .notif-item:hover { background: #334155; }
 
-/* 모달 시스템 통합 (z-index 및 터치 버그 해결) */
+/* 모달 시스템 통합 */
 .auto-popup-overlay, .modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.7); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); opacity:1; transition:0.3s;}
 .auto-popup-overlay.hidden, .modal-overlay.hidden { display: none !important; opacity:0; pointer-events: none;}
 .auto-popup-card, .modal-content { background: #1c2438; border: 1px solid #334155; border-radius: 16px; width: 95%; max-width: 420px; padding: 30px 25px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;}
@@ -116,7 +116,6 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .pop-action-item .text h4 { margin: 0 0 5px 0; font-size: 15px; color: white; }
 .pop-action-item .text p { margin: 0; font-size: 12px; color: #94a3b8; line-height: 1.4;}
 
-.auto-popup-btn { background: #2563eb; color: white; width: 100%; padding: 16px; border-radius: 10px; font-weight: 800; font-size: 15px; border: none; cursor: pointer; margin-bottom: 20px;}
 .auto-popup-footer { text-align: center; color: #94a3b8; font-size: 14px; cursor: pointer; text-decoration: underline; font-weight: 600; padding: 10px;}
 
 /* 커뮤니티 상세 모달 */
