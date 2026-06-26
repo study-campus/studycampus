@@ -18,12 +18,16 @@ const DEFAULT_STATE = {
     users: [], lectures: [], homework: [], hwSubmissions: [], community: [], notices: [], payments: [], materials: [], reports: [], alerts: [],
     settings: {
         rollingBanners: [
-            { img: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80", link: "#" }
+            { tab: "대학 합격의 기준", img: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80", link: "#" }
         ],
         dashBanner: "새로운 온라인 학습 시스템 오픈! 완벽한 밀착 관리를 경험하세요.",
         hwWarning: "⚠️ 숙제 제출 기한 : 당일 저녁 12시\n⚠️ 늦어지는 경우 미리 사유+인증 필요 (ex. 학원증)\n⚠️ 미제출시 경고 / 경고2회 = 옐로카드 / 옐로카드2회 = 레드카드\n⚠️ 필기가 비어있을 경우 미제출로 간주",
         payment: { pgUrl: "", bankInfo: "[하나은행] 342-910508-31507", opt1: "1개월-10만", opt2: "", opt3: "", opt4: "" },
-        popup: { active: false, tag: "이용 안내", title: "함께 발전해 나가요!", desc: "의견을 남겨주시면 큰 도움이 됩니다.", b1Title: "카카오톡 채널 친구 추가하기", b1Desc: "1개월 무료 수강권을 드립니다.", b1Url: "http://pf.kakao.com/_xdxnxfXX", b2Title: "인스타그램 팔로우하기", b2Desc: "카카오톡 채널에 바로가기에 있습니다.", b2Url: "#" }
+        popup: { 
+            active: false, tag: "이용 안내", title: "함께 발전해 나가요!", desc: "의견을 남겨주시면 큰 도움이 됩니다.", 
+            b1Title: "카카오톡 채널 친구 추가하기", b1Desc: "1개월 무료 수강권을 드립니다.", b1Url: "http://pf.kakao.com/_xdxnxfXX",
+            b2Title: "인스타그램 팔로우하기", b2Desc: "카카오톡 채널에 바로가기에 있습니다.", b2Url: "https://instagram.com" 
+        }
     },
     landing: { heroSub: "STUDY CAMPUS LEARNING SYSTEM", heroTitle: "성적 향상의 해답<br>프리미엄 온라인 학원", heroDesc: "1:1 관리 시스템.", s1Num: "260", s1Txt: "수강", s2Num: "2등급", s2Txt: "상승", s3Num: "98점", s3Txt: "수능", secTitle: "왜 StudyCampus 인가요?", f1Badge: "문제", f1Col: "red", f1Title: "성적이 안 오르는 이유", f1Desc: "일방적인 강의 시청, 피드백 없는 숙제", f1Emoji: "😫", f2Badge: "해결", f2Col: "blue", f2Title: "체계적인 온라인 밀착 관리", f2Desc: "누구나 포기하지 않고 따라오는 커리큘럼", f2Emoji: "💡", botTitle: "지금 StudyCampus와 시작하세요" }
 };
@@ -35,12 +39,15 @@ const AppState = {
     adminModal: { isOpen: false, mode: 'add', studentId: null }
 };
 
-let rbTimer = null; // 롤링 배너 타이머
+let rbTimer = null; 
+let currentBannerIdx = 0;
+let rbsData = [];
 
-// 유틸리티
+// ------------------------- 유틸리티 -------------------------
 function showToast(msg) { const c = document.getElementById('toast-container'); const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; c.appendChild(t); setTimeout(() => t.remove(), 2500); }
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 function clearLectureTimer() { if(AppState.lectureTimer) { clearInterval(AppState.lectureTimer); AppState.lectureTimer = null; } }
+function clearBannerTimer() { if(rbTimer) { clearInterval(rbTimer); rbTimer = null; } }
 function normalizeSchool(name) { let s = name.trim(); if(s && s.endsWith('고')) s += '등학교'; return s; }
 
 // 파이어베이스 데이터 동기화
@@ -61,9 +68,10 @@ onValue(dbRef, (snapshot) => {
 });
 function syncData() { set(dbRef, AppState.data); }
 
-// 라우팅 
+// 라우팅 (메뉴 탭별 독립 페이지 처리)
 function switchView(viewName) {
     clearLectureTimer(); 
+    if(viewName !== 'landing') clearBannerTimer();
     if(viewName !== 'lecture-player') AppState.activeLecture = null;
     AppState.currentView = viewName;
     
@@ -74,12 +82,12 @@ function switchView(viewName) {
     if (viewName === 'auth') switchAuthMode('login');
     const isAppView = viewName === 'student' || viewName === 'admin' || viewName === 'payment' || viewName === 'lecture-player';
     
-    // 🔥 로그인 전용 영역(카톡버튼 포함 global-element)을 대시보드에서는 숨김
     document.querySelectorAll('.global-element').forEach(el => el.classList.toggle('hidden', isAppView));
     
     if(!isAppView) renderNavbar();
     if (viewName === 'student') checkAndShowPopup();
-    if(viewName === 'landing') renderLandingPage();
+    if (viewName === 'landing') renderLandingPage();
+    
     renderCurrentView();
 }
 
@@ -108,18 +116,24 @@ function renderCurrentView() {
     else if (AppState.currentView === 'lecture-player' && AppState.currentUser) renderLecturePlayer();
 }
 
-// 🔥 롤링 배너 로직 추가
-function startRollingBanner() {
-    if(rbTimer) clearInterval(rbTimer);
-    const track = document.getElementById('rolling-banner-track');
-    if(!track) return;
-    const slides = track.children.length;
-    if(slides <= 1) return;
-    let idx = 0;
+// 롤링 배너 컨트롤러
+function startBanner() {
+    clearBannerTimer();
+    if(rbsData.length <= 1) return;
     rbTimer = setInterval(() => {
-        idx = (idx + 1) % slides;
-        track.style.transform = `translateX(-${idx * 100}%)`;
-    }, 3500);
+        currentBannerIdx = (currentBannerIdx + 1) % rbsData.length;
+        updateBannerUI();
+    }, 4000);
+}
+function updateBannerUI() {
+    const tabs = document.querySelectorAll('.mega-tab');
+    tabs.forEach((tab, i) => tab.classList.toggle('active', i === currentBannerIdx));
+    const imgEl = document.getElementById('mega-banner-img');
+    const viewContainer = document.getElementById('mega-banner-view');
+    if(rbsData[currentBannerIdx]) {
+        imgEl.src = rbsData[currentBannerIdx].img || '';
+        viewContainer.dataset.link = rbsData[currentBannerIdx].link || '#';
+    }
 }
 
 function renderLandingPage() {
@@ -128,16 +142,13 @@ function renderLandingPage() {
     document.getElementById('ld-s1-n').textContent = ld.s1Num || ''; document.getElementById('ld-s1-t').textContent = ld.s1Txt || ''; document.getElementById('ld-s2-n').textContent = ld.s2Num || ''; document.getElementById('ld-s2-t').textContent = ld.s2Txt || ''; document.getElementById('ld-s3-n').textContent = ld.s3Num || ''; document.getElementById('ld-s3-t').textContent = ld.s3Txt || '';
     document.getElementById('ld-sec-title').textContent = ld.secTitle || ''; document.getElementById('ld-f1-b').textContent = ld.f1Badge || ''; document.getElementById('ld-f1-b').className = 'badge-' + (ld.f1Col || 'blue'); document.getElementById('ld-f1-t').textContent = ld.f1Title || ''; document.getElementById('ld-f1-d').textContent = ld.f1Desc || ''; document.getElementById('ld-f1-e').textContent = ld.f1Emoji || ''; document.getElementById('ld-f2-b').textContent = ld.f2Badge || ''; document.getElementById('ld-f2-b').className = 'badge-' + (ld.f2Col || 'red'); document.getElementById('ld-f2-t').textContent = ld.f2Title || ''; document.getElementById('ld-f2-d').textContent = ld.f2Desc || ''; document.getElementById('ld-f2-e').textContent = ld.f2Emoji || ''; document.getElementById('ld-bot-title').textContent = ld.botTitle || '';
     
-    // 롤링 배너 렌더링
-    const rBanners = AppState.data.settings?.rollingBanners || [];
-    const rbTrack = document.getElementById('rolling-banner-track');
-    if(rbTrack) {
-        if(rBanners.length === 0) {
-            rbTrack.innerHTML = `<div class="rolling-banner-item" style="background-image:url('https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80')"></div>`;
-        } else {
-            rbTrack.innerHTML = rBanners.map(b => `<div class="rolling-banner-item" style="background-image:url('${b.img}')" onclick="window.open('${b.link||'#'}','_blank')"></div>`).join('');
-            startRollingBanner();
-        }
+    // 롤링 배너 세팅
+    rbsData = AppState.data.settings?.rollingBanners || [];
+    const tabsContainer = document.getElementById('mega-banner-tabs');
+    if(tabsContainer && rbsData.length > 0) {
+        tabsContainer.innerHTML = rbsData.map((b, i) => `<button class="mega-tab ${i === currentBannerIdx ? 'active' : ''}" data-action="change-banner" data-idx="${i}">${b.tab}</button>`).join('');
+        updateBannerUI();
+        startBanner();
     }
 }
 
@@ -166,7 +177,7 @@ function checkAndShowPopup() {
     document.getElementById('student-auto-popup').classList.remove('hidden');
 }
 
-// ------------------------- 학생 대시보드 렌더링 -------------------------
+// ------------------------- 학생 대시보드 -------------------------
 function renderStudentDashboard() {
     const container = document.getElementById('student-dash-content');
     const { currentUser, data, studentTab } = AppState;
@@ -175,7 +186,6 @@ function renderStudentDashboard() {
 
     document.querySelectorAll('#student-bottom-nav .stu-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === studentTab));
     
-    // 알림 표시 (모두 읽음 / 삭제 버튼 포함)
     const notifList = document.getElementById('notif-list');
     const myAlerts = (data.alerts || []).filter(a => a.studentId === me.id);
     const globalNotices = (data.notices || []).map(n => ({...n, type: 'notice'}));
@@ -247,27 +257,62 @@ function renderStudentDashboard() {
     }
     else if (studentTab === 'test') html += `<div class="stu-banner-green">나의 테스트실</div><div class="stu-empty">시험지 없음</div>`;
     else if (studentTab === 'lectures') {
-        html += `<div style="background:white; border-radius:16px; padding:0; overflow:hidden; color:#1e293b; margin-bottom:20px; box-shadow:0 10px 20px rgba(0,0,0,0.2);"><div style="background:#2563eb; padding:30px 20px; color:white;"><div style="font-size:12px; font-weight:700; margin-bottom:5px; opacity:0.8;">2026년 상시 정규반</div><h2 style="font-size:24px; font-weight:800; margin-bottom:5px; letter-spacing:-1px;">기출분석 및 모의고사</h2><div style="font-size:13px; opacity:0.8;">현재 주차 진행중</div></div><div style="padding:20px;"><h3 style="font-size:16px; font-weight:800; margin-bottom:15px; display:flex; align-items:center; gap:8px;"><span style="color:#2563eb;">●</span> 이번 주 시청 목록</h3><div style="display:flex; flex-direction:column; gap:0;">`;
-        if (!data.lectures || data.lectures.length === 0) { html += `<div style="text-align:center; padding:40px; color:#94a3b8; font-weight:600; background:#f8fafc; border-radius:12px;">등록된 강의가 없습니다.</div>`; } 
-        else {
+        html += `
+        <div style="background:white; border-radius:16px; padding:0; overflow:hidden; color:#1e293b; margin-bottom:20px; box-shadow:0 10px 20px rgba(0,0,0,0.2);">
+            <div style="background:#2563eb; padding:30px 20px; color:white;">
+                <div style="font-size:12px; font-weight:700; margin-bottom:5px; opacity:0.8;">2026년 상시 정규반</div>
+                <h2 style="font-size:24px; font-weight:800; margin-bottom:5px; letter-spacing:-1px;">기출분석 및 모의고사</h2>
+                <div style="font-size:13px; opacity:0.8;">현재 주차 진행중</div>
+            </div>
+            <div style="padding:20px;">
+                <h3 style="font-size:16px; font-weight:800; margin-bottom:15px; display:flex; align-items:center; gap:8px;"><span style="color:#2563eb;">●</span> 이번 주 시청 목록</h3>
+                <div style="display:flex; flex-direction:column; gap:0;">
+        `;
+        if (!data.lectures || data.lectures.length === 0) {
+            html += `<div style="text-align:center; padding:40px; color:#94a3b8; font-weight:600; background:#f8fafc; border-radius:12px;">등록된 강의가 없습니다.</div>`;
+        } else {
             data.lectures.forEach((l, idx) => {
-                const p = me.lectureProgress?.[l.id] || { percent: 0, done: false }; const isDone = p.done || p.percent >= 90;
+                const p = me.lectureProgress?.[l.id] || { percent: 0, done: false };
+                const isDone = p.done || p.percent >= 90;
+                
                 const iconBg = isDone ? '#dcfce7' : '#e0e7ff'; const iconColor = isDone ? '#16a34a' : '#4f46e5'; const iconChar = isDone ? '✓' : '▶'; const btnText = isDone ? '완료' : '시청'; const btnColor = isDone ? '#16a34a' : '#3b82f6';
-                html += `<div style="display:flex; justify-content:space-between; align-items:center; padding:18px 0; border-bottom:1px solid #f1f5f9;"><div style="display:flex; align-items:center; gap:15px; width:75%;"><div style="width:40px; height:40px; border-radius:50%; background:${iconBg}; color:${iconColor}; display:flex; justify-content:center; align-items:center; font-size:16px; font-weight:bold; flex-shrink:0;">${iconChar}</div><div><div style="font-weight:700; font-size:15px; margin-bottom:4px; color:#0f172a; line-height:1.4;">${idx+1}강. ${l.title}</div><div style="font-size:12px; color:#64748b; font-weight:600;">${isDone ? '수강 완료' : (p.percent + '% 진행중')}</div></div></div><button class="btn-text" style="color:${btnColor}; font-weight:800; font-size:14px; background:#f8fafc; padding:8px 16px; border-radius:20px; transition:0.2s; border:1px solid #e2e8f0;" data-action="open-lecture" data-id="${l.id}">${btnText}</button></div>`;
+
+                html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 0; border-bottom:1px solid #f1f5f9;">
+                    <div style="display:flex; align-items:center; gap:15px; width:75%;">
+                        <div style="width:40px; height:40px; border-radius:50%; background:${iconBg}; color:${iconColor}; display:flex; justify-content:center; align-items:center; font-size:16px; font-weight:bold; flex-shrink:0;">${iconChar}</div>
+                        <div>
+                            <div style="font-weight:700; font-size:15px; margin-bottom:4px; color:#0f172a; line-height:1.4;">${idx+1}강. ${l.title}</div>
+                            <div style="font-size:12px; color:#64748b; font-weight:600;">${isDone ? '수강 완료' : (p.percent + '% 진행중')}</div>
+                        </div>
+                    </div>
+                    <button class="btn-text" style="color:${btnColor}; font-weight:800; font-size:14px; background:#f8fafc; padding:8px 16px; border-radius:20px; transition:0.2s; border:1px solid #e2e8f0;" data-action="open-lecture" data-id="${l.id}">${btnText}</button>
+                </div>
+                `;
             });
         }
         html += `</div></div></div>`;
     }
     else if (studentTab === 'materials') {
         const cat = AppState.materialCategory; html += `<div class="stu-banner-mint">자료실</div><div style="display:flex; gap:10px; margin-bottom:20px;"><button class="stu-btn-pill ${cat==='전체'?'active':''}" data-action="set-mat-cat" data-cat="전체">전체</button><button class="stu-btn-pill ${cat==='공지'?'active':''}" data-action="set-mat-cat" data-cat="공지">공지</button><button class="stu-btn-pill ${cat==='교재'?'active':''}" data-action="set-mat-cat" data-cat="교재">교재</button></div>`; const mats = (data.materials || []).filter(m => cat === '전체' || m.category === cat);
-        if(mats.length === 0) html += `<div class="stu-empty">자료 없음</div>`; else mats.forEach(m => { html += `<div class="stu-card"><strong style="font-size:16px; display:flex; align-items:center; gap:8px;">${m.title} <span class="badge ${m.category==='공지'?'badge-red':'badge-blue'}">${m.category}</span></strong><p style="color:var(--text-muted); font-size:14px; margin-top:8px;">${m.desc||''}</p>`; if(m.fileData) html += `<a href="${m.fileData}" download="${m.fileName}" style="display:inline-block; margin-top:15px; padding:10px 16px; background:#1e293b; color:white; border-radius:8px; border:1px solid #334155; font-size:13px; font-weight:bold;">📥 ${m.fileName} 다운로드</a>`; html += `</div>`; });
+        if(mats.length === 0) html += `<div class="stu-empty">자료 없음</div>`;
+        else mats.forEach(m => { html += `<div class="stu-card"><strong style="font-size:16px; display:flex; align-items:center; gap:8px;">${m.title} <span class="badge ${m.category==='공지'?'badge-red':'badge-blue'}">${m.category}</span></strong><p style="color:var(--text-muted); font-size:14px; margin-top:8px;">${m.desc||''}</p>`; if(m.fileData) html += `<a href="${m.fileData}" download="${m.fileName}" style="display:inline-block; margin-top:15px; padding:10px 16px; background:#1e293b; color:white; border-radius:8px; border:1px solid #334155; font-size:13px; font-weight:bold;">📥 ${m.fileName} 다운로드</a>`; html += `</div>`; });
     }
     else if (studentTab === 'community') {
         html += `<h2 style="font-size:24px; font-weight:800; color:#60a5fa; margin-bottom:20px;">소통 커뮤니티</h2><div class="stu-card" style="padding:10px;"><form id="form-community" style="display:flex; gap:10px;"><input type="text" id="comm-text" required placeholder="질문방 작성..." style="flex:1; background:transparent; border:1px solid #334155; border-radius:8px; padding:12px 15px; color:white; outline:none; font-size:14px;"><button type="submit" class="btn-primary" style="width:auto; padding:0 20px;">등록</button></form></div>`;
         if (!data.community || data.community.length === 0) html += `<div style="text-align:center; color:#64748b; margin-top:60px; font-size:14px; font-weight:600;">등록된 글이 없습니다.</div>`;
         else data.community.forEach(c => html += `<div class="stu-card" style="cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='var(--border)'" data-action="open-post" data-id="${c.id}"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><strong style="font-size:14px;">👤 ${c.author}</strong><span style="color:#64748b; font-size:12px;">${c.date||''}</span></div><p style="font-size:15px; line-height:1.5;">${c.content}</p><div style="margin-top:10px; font-size:13px; color:#64748b;">❤️ ${c.likes?c.likes.length:0} &nbsp; 💬 ${c.comments?c.comments.length:0}</div></div>`);
+        
+        if (AppState.activePostId) {
+            const post = data.community.find(c => c.id === AppState.activePostId);
+            const isLiked = post.likes && post.likes.includes(me.id);
+            const isAuthor = (post.authorId === me.id) || (post.author === me.name);
+            const authorActionsHtml = isAuthor ? `<div style="display:flex; gap:15px; margin-top:15px; border-top:1px solid var(--border); padding-top:15px;"><button class="btn-text" style="color:#60a5fa; padding:0; font-size:13px;" data-action="edit-post" data-id="${post.id}">📝 수정하기</button><button class="btn-text" style="color:#ef4444; padding:0; font-size:13px;" data-action="delete-post" data-id="${post.id}">🗑️ 삭제하기</button></div>` : '';
+
+            html += `<div class="modal-overlay"><div class="post-modal-content"><div class="post-header"><strong style="font-size:16px;">👤 ${post.author}</strong><button class="btn-text" data-action="close-post" style="font-size:24px; padding:0;">×</button></div><div class="post-body"><p style="font-size:16px; line-height:1.6; white-space:pre-wrap;">${post.content}</p>${authorActionsHtml}<button class="post-likes ${isLiked?'liked':''}" data-action="toggle-like" data-id="${post.id}">❤️ ${post.likes?post.likes.length:0} 공감하기</button></div><div class="comment-section"><div class="comment-list">${(!post.comments||post.comments.length===0)?'<p style="color:var(--text-muted); font-size:13px; text-align:center;">첫 댓글을 남겨보세요.</p>':post.comments.map(cm=>`<div class="comment-item"><strong>${cm.author}</strong> <span style="color:#64748b; font-size:11px; margin-left:8px;">${cm.date}</span><p style="margin-top:5px; font-size:14px;">${cm.content}</p></div>`).join('')}</div><form id="form-comment" style="display:flex; gap:10px;"><input type="text" id="comment-text" required placeholder="댓글 달기..." class="admin-input" style="margin:0;"><button type="submit" class="btn-primary" style="width:auto; padding:0 20px;">작성</button></form></div></div></div>`;
+        }
     }
-    // 🔥 마이페이지: 수강권 연동 및 회원정보 입력 필드 고도화
+    // 🔥 마이페이지
     else if (studentTab === 'mypage') {
         let expiryHtml = `<div style="color:var(--text-muted); font-size:14px;">수강권 없음</div>`;
         if (me.ticketExpiry) {
@@ -315,7 +360,6 @@ function renderStudentDashboard() {
     container.innerHTML = html;
 }
 
-// ------------------------- 강의 플레이어 렌더링 -------------------------
 function renderLecturePlayer() {
     const container = document.getElementById('lecture-player-content');
     const { currentUser, data, activeLecture } = AppState;
@@ -349,7 +393,7 @@ function renderLecturePlayer() {
                 <div style="width:100%; height:6px; background:#0f172a; border-radius:3px; margin-bottom:15px; overflow:hidden;">
                     <div id="live-progress-bar" style="width:${prog.percent}%; height:100%; background:#3b82f6; transition:width 1s linear;"></div>
                 </div>
-                <div style="font-size:13px; color:#fbbf24; font-weight:700;">⚠️ 90% 이상 수강해야 출석으로 인정됩니다.</div>
+                <div style="font-size:13px; color:#fbbf24; font-weight:700;">⚠️ 80% 이상 수강해야 출석으로 인정됩니다.</div>
             </div>
         </div>
         <div class="player-playlist">
@@ -379,12 +423,11 @@ function renderLecturePlayer() {
     html += `</div></div></div>`;
     container.innerHTML = html;
 
-    // 🔥 강의 시청 시간 트래킹 (정상 작동 복구)
     if (!isDone) {
         clearLectureTimer();
         let currentProg = prog.percent;
         AppState.lectureTimer = setInterval(() => {
-            currentProg += 5; // 5%씩 업데이트 (테스트용 빠른 진행)
+            currentProg += 5; // 강의 시청률 복구 (5%씩 반영)
             const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
             if (currentProg >= 90) { 
                 currentProg = 100; clearLectureTimer(); 
@@ -430,13 +473,11 @@ function renderAdminDashboard() {
         `;
     }
     else if (tab === 'payments') {
-        const paySet = set.payment || { pgUrl: "", bankInfo: "[하나은행] 342-910508-31507", opt1: "1개월-10만", opt2: "", opt3: "", opt4: "" };
         html += `<div class="admin-card"><h2 style="color:#60a5fa; font-size:1.1rem; margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:15px;">결제 승인 대기 목록</h2><div class="table-responsive"><table class="admin-table" style="margin-top:10px;"><thead><tr><th>학생명(ID)</th><th>요청 상품</th><th>증명사진</th><th>상태</th></tr></thead><tbody>`;
         if(!data.payments || data.payments.length===0) html += `<tr><td colspan="4" style="text-align:center; padding:30px; color:var(--text-muted);">요청없음</td></tr>`;
         else data.payments.forEach(p => html += `<tr><td><strong>${p.userName}</strong><br><span style="font-size:12px; color:var(--text-muted);">${p.userId}</span></td><td>${p.item}</td><td><a href="${p.image}" target="_blank" style="color:#60a5fa; text-decoration:underline; font-size:13px;">사진 보기</a></td><td>${p.status === '승인대기' ? `<button class="btn-primary btn-sm" data-action="approve-payment" data-id="${p.id}">결제 승인</button>` : `<span style="color:#10b981; font-weight:bold;">승인완료</span>`}</td></tr>`);
-        html += `</tbody></table></div></div><div class="admin-card"><h2 style="color:#60a5fa; font-size:1.1rem; margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:15px;">⚙️ 결제 연동 설정</h2><form id="form-admin-payment-settings"><p class="admin-label">PG 링크 URL</p><input type="text" id="pay-set-pg" class="admin-input" value="${paySet.pgUrl}"><p class="admin-label" style="margin-top:10px;">무통장 계좌 안내</p><input type="text" id="pay-set-bank" class="admin-input" value="${paySet.bankInfo}"><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;"><input type="text" id="pay-set-opt1" class="admin-input" value="${paySet.opt1}" placeholder="옵션1"><input type="text" id="pay-set-opt2" class="admin-input" value="${paySet.opt2}" placeholder="옵션2"><input type="text" id="pay-set-opt3" class="admin-input" value="${paySet.opt3}" placeholder="옵션3"><input type="text" id="pay-set-opt4" class="admin-input" value="${paySet.opt4}" placeholder="옵션4"></div><button type="submit" class="btn-primary" style="width:100%; margin-top:20px; background:#1e293b; color:white; border:1px solid #334155;">결제 설정 적용</button></form></div>`;
+        html += `</tbody></table></div></div><div class="admin-card"><h2 style="color:#60a5fa; font-size:1.1rem; margin-bottom:15px; border-bottom:1px solid var(--border); padding-bottom:15px;">⚙️ 결제 연동 설정</h2><form id="form-admin-payment-settings"><p class="admin-label">PG 링크 URL</p><input type="text" id="pay-set-pg" class="admin-input" value="${set.payment?.pgUrl||''}"><p class="admin-label" style="margin-top:10px;">무통장 계좌 안내</p><input type="text" id="pay-set-bank" class="admin-input" value="${set.payment?.bankInfo||''}"><div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;"><input type="text" id="pay-set-opt1" class="admin-input" value="${set.payment?.opt1||''}" placeholder="옵션1"><input type="text" id="pay-set-opt2" class="admin-input" value="${set.payment?.opt2||''}" placeholder="옵션2"><input type="text" id="pay-set-opt3" class="admin-input" value="${set.payment?.opt3||''}" placeholder="옵션3"><input type="text" id="pay-set-opt4" class="admin-input" value="${set.payment?.opt4||''}" placeholder="옵션4"></div><button type="submit" class="btn-primary" style="width:100%; margin-top:20px; background:#1e293b; color:white; border:1px solid #334155;">결제 설정 적용</button></form></div>`;
     }
-    // 🔥 [관리자] 롤링 배너 에디터 추가
     else if (tab === 'settings') {
         const pop = set.popup;
         const rbs = set.rollingBanners || [];
@@ -456,28 +497,32 @@ function renderAdminDashboard() {
                     <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3 style="font-size:1rem; color:white;">학생 로그인 자동 팝업창 (모달 2개 버튼 지원)</h3><label><input type="checkbox" id="set-pop-active" ${pop.active?'checked':''}> 활성화</label></div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                         <input type="text" id="set-pop-tag" class="admin-input" value="${pop.tag}"><input type="text" id="set-pop-title" class="admin-input" value="${pop.title}"><textarea id="set-pop-desc" class="admin-input" style="grid-column:1/-1; height:60px;">${pop.desc}</textarea>
-                        
-                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);">
-                            <h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 내용 (위)</h4>
-                            <input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}"><input type="text" id="set-pop-b1-url" class="admin-input" value="${pop.b1Url||''}" placeholder="이동할 링크 URL">
-                        </div>
-                        
-                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);">
-                            <h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 내용 (아래)</h4>
-                            <input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}"><input type="text" id="set-pop-b2-url" class="admin-input" value="${pop.b2Url||''}" placeholder="이동할 링크 URL">
-                        </div>
+                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 내용 (위)</h4><input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}"><input type="text" id="set-pop-b1-url" class="admin-input" value="${pop.b1Url||''}" placeholder="이동할 링크 URL"></div>
+                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 내용 (아래)</h4><input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}"><input type="text" id="set-pop-b2-url" class="admin-input" value="${pop.b2Url||''}" placeholder="이동할 링크 URL"></div>
                     </div>
                 </div>
                 
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;">
-                    <h3 style="margin-bottom:15px; font-size:1rem; color:white;">🔄 랜딩페이지 롤링 배너 설정 (최대 3개)</h3>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                        <input type="text" id="rb1-img" class="admin-input" value="${rbs[0]?.img||''}" placeholder="배너1 이미지 URL">
-                        <input type="text" id="rb1-link" class="admin-input" value="${rbs[0]?.link||''}" placeholder="배너1 클릭 시 이동할 링크">
-                        <input type="text" id="rb2-img" class="admin-input" value="${rbs[1]?.img||''}" placeholder="배너2 이미지 URL">
-                        <input type="text" id="rb2-link" class="admin-input" value="${rbs[1]?.link||''}" placeholder="배너2 클릭 시 이동할 링크">
-                        <input type="text" id="rb3-img" class="admin-input" value="${rbs[2]?.img||''}" placeholder="배너3 이미지 URL">
-                        <input type="text" id="rb3-link" class="admin-input" value="${rbs[2]?.link||''}" placeholder="배너3 클릭 시 이동할 링크">
+                    <h3 style="margin-bottom:15px; font-size:1rem; color:white;">🔄 랜딩페이지 롤링 배너 설정 (최대 5개)</h3>
+                    <p style="font-size:13px; color:#94a3b8; margin-bottom:15px;">좌측 메뉴 탭 이름, 이미지 파일, 클릭 시 이동 링크를 입력하세요.</p>
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        ${[0,1,2,3,4].map(i => {
+                            const b = rbs[i] || {tab: '', img: '', link: ''};
+                            return `
+                            <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);">
+                                <h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">배너 ${i+1}</h4>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                    <input type="text" id="rb${i}-tab" class="admin-input" value="${b.tab}" placeholder="좌측 탭 메뉴 이름" style="margin:0;">
+                                    <input type="text" id="rb${i}-link" class="admin-input" value="${b.link}" placeholder="클릭 시 이동할 링크 URL" style="margin:0;">
+                                </div>
+                                <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+                                    <input type="file" id="rb${i}-file" class="admin-input banner-file-input" accept="image/*" style="margin:0; padding:8px;">
+                                    <input type="hidden" id="rb${i}-existing-img" value="${b.img}">
+                                    ${b.img ? `<img src="${b.img}" style="height:40px; border-radius:4px;">` : `<span style="font-size:12px; color:#64748b;">이미지 없음</span>`}
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
 
@@ -527,18 +572,23 @@ function renderAdminDashboard() {
 }
 
 // =========================================================
-// [통합 이벤트 위임] (클릭/파일/제출)
+// [통합 위임 핸들러 (클릭/파일/제출)]
 // =========================================================
 document.body.addEventListener('change', async (e) => {
     if (e.target.matches('input[type="file"]')) {
         const files = Array.from(e.target.files || []);
         if(files.length === 0) return;
-        const limitSize = (e.target.id === 'mat-file') ? 100 * 1024 * 1024 : 2 * 1024 * 1024; const limitText = (e.target.id === 'mat-file') ? '100MB' : '2MB';
-        if(files.some(f => f.size > limitSize)) { e.target.value = ''; return showToast(`⚠️ ${limitText} 이하 파일만 첨부 가능합니다.`); }
+        const limitSize = 100 * 1024 * 1024;
+        if(files.some(f => f.size > limitSize)) { e.target.value = ''; return showToast(`⚠️ 100MB 이하 파일만 첨부 가능합니다.`); }
         showToast("파일 처리 중...");
         try {
             const b64 = await Promise.all(files.map(f => new Promise(res => { const r = new FileReader(); r.onload = ev => res({ name: f.name, data: ev.target.result }); r.readAsDataURL(f); })));
-            if (e.target.id === 'pay-req-file') { e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료"); } 
+            
+            // 배너 이미지 첨부 캐치
+            if (e.target.classList.contains('banner-file-input')) {
+                e.target.dataset.base64 = b64[0].data; showToast("✅ 배너 이미지 첨부 완료");
+            }
+            else if (e.target.id === 'pay-req-file') { e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료"); } 
             else if (e.target.dataset.hwid) { if(!AppState.data.hwSubmissions) AppState.data.hwSubmissions = []; AppState.data.hwSubmissions.push({ id: generateId(), hwId: e.target.dataset.hwid, studentId: AppState.currentUser.id, studentName: AppState.currentUser.name, files: b64, status: 'pending' }); syncData(); showToast("✅ 숙제 제출 완료!"); }
         } catch (err) { showToast("❌ 파일 업로드 오류가 발생했습니다."); }
     }
@@ -550,9 +600,15 @@ document.body.addEventListener('click', (e) => {
         if (!actionNode) return;
         const action = actionNode.dataset.action;
 
-        if (action === 'nav') switchView(actionNode.dataset.target);
+        // 배너 탭 클릭 로직
+        if (action === 'change-banner') {
+            currentBannerIdx = parseInt(actionNode.dataset.idx);
+            updateBannerUI();
+            startBanner();
+        }
+        else if (action === 'nav') switchView(actionNode.dataset.target);
         else if (action === 'auth-toggle') {
-            if(AppState.currentUser) { AppState.currentUser = null; sessionStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); }
+            if(AppState.currentUser) { AppState.currentUser = null; localStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); }
             else { switchView('auth'); switchAuthMode('login'); }
         }
         else if (action === 'auth-register') {
@@ -575,9 +631,7 @@ document.body.addEventListener('click', (e) => {
             document.getElementById('modal-student-edit').classList.remove('hidden');
         }
         else if (action === 'close-student-edit') { document.getElementById('modal-student-edit').classList.add('hidden'); }
-        
-        // 🔥 알림 드롭다운 일괄 처리 추가
-        else if (action === 'toggle-notif') { const drop = document.getElementById('notif-dropdown'); if(drop) drop.classList.toggle('hidden'); }
+        else if (action === 'toggle-notif') { const drop = document.getElementById('notif-dropdown'); if(drop) { drop.classList.toggle('hidden'); } }
         else if (action === 'read-all-notif') {
             let upd = false;
             (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }});
@@ -589,7 +643,6 @@ document.body.addEventListener('click', (e) => {
                 syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("알림이 모두 삭제되었습니다."); renderStudentDashboard();
             }
         }
-        
         else if (action === 'close-popup') { document.getElementById('student-auto-popup').classList.add('hidden'); sessionStorage.setItem('studycampus_popup_shown', 'true'); }
         else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 보지 않습니다."); }
         else if (action === 'change-week') { const dir = parseInt(actionNode.dataset.dir); let newWeek = AppState.currentHwWeekNumber + dir; if (newWeek < 1) newWeek = 1; AppState.currentHwWeekNumber = newWeek; renderStudentDashboard(); }
@@ -599,18 +652,16 @@ document.body.addEventListener('click', (e) => {
         else if (action === 'edit-post') { const post = AppState.data.community.find(c => c.id === actionNode.dataset.id); if(post) { const newText = prompt("게시물 내용을 수정하세요:", post.content); if(newText !== null && newText.trim() !== "") { post.content = newText.trim(); syncData(); showToast("수정되었습니다."); renderStudentDashboard(); } } }
         else if (action === 'delete-post') { if(confirm("이 게시물을 완전히 삭제하시겠습니까?")) { AppState.data.community = AppState.data.community.filter(c => c.id !== actionNode.dataset.id); if(AppState.activePostId === actionNode.dataset.id) AppState.activePostId = null; syncData(); showToast("삭제되었습니다."); renderStudentDashboard(); } }
         else if (action === 'toggle-like') { const post = AppState.data.community.find(c => c.id === actionNode.dataset.id); if(post) { if(!post.likes) post.likes = []; const meId = AppState.currentUser.id; const idx = post.likes.indexOf(meId); if(idx > -1) post.likes.splice(idx, 1); else post.likes.push(meId); syncData(); } }
-        
-        // 🔥 강의 시청 타이머 업데이트 (수정 완결)
         else if (action === 'open-lecture') { AppState.activeLecture = AppState.data.lectures.find(l => l.id === actionNode.dataset.id); switchView('lecture-player'); }
         else if (action === 'close-lecture') { switchView('student'); }
         else if (action === 'play-video') {
             clearLectureTimer(); const lecId = AppState.activeLecture.id; const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id); if(!AppState.data.users[userIdx].lectureProgress) AppState.data.users[userIdx].lectureProgress = {};
             let currentProg = AppState.data.users[userIdx].lectureProgress[lecId]?.percent || 0;
-            actionNode.innerHTML = '⏸️'; showToast("수강 기록이 진행됩니다.");
+            actionNode.innerHTML = '⏸️'; showToast("수강 기록 시작됨");
             
             AppState.lectureTimer = setInterval(() => {
                 currentProg += 5; 
-                if (currentProg >= 90) { currentProg = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 수강 완료 인정!"); renderLecturePlayer(); } 
+                if (currentProg >= 90) { currentProg = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 90% 달성 완료!"); renderLecturePlayer(); } 
                 else { AppState.data.users[userIdx].lectureProgress[lecId] = { percent: currentProg, done: false }; }
                 const bar = document.getElementById('live-progress-bar'); const txt = document.getElementById('live-progress-text');
                 if(bar) bar.style.width = currentProg + '%'; if(txt) txt.textContent = currentProg + '%';
@@ -618,9 +669,7 @@ document.body.addEventListener('click', (e) => {
         }
         else if (action === 'trigger-file') { const fi = document.getElementById(`hw-file-${actionNode.dataset.id}`); if(fi) fi.click(); }
         else if (action === 'cancel-hw') { AppState.data.hwSubmissions = AppState.data.hwSubmissions.filter(s => s.id !== actionNode.dataset.subid); syncData(); showToast("기존 제출본 삭제됨"); }
-        else if (action === 'delete-account') { if(confirm("탈퇴하시면 현재까지 모든 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴하시겠습니까?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); sessionStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
-        
-        // 관리자
+        else if (action === 'delete-account') { if(confirm("탈퇴하시면 현재까지 모든 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴하시겠습니까?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); sessionStorage.removeItem('studycampus_session'); localStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
         else if (action === 'edit-admin-hw') { const hw = AppState.data.homework.find(h => h.id === actionNode.dataset.id); if(hw) { const newDesc = prompt("과제 내용을 수정하세요:", hw.desc); if(newDesc !== null && newDesc.trim() !== "") { hw.desc = newDesc.trim(); syncData(); showToast("수정되었습니다."); renderAdminDashboard(); } } }
         else if (action === 'delete-admin-hw') { if(confirm("해당 주차의 과제를 완전히 삭제하시겠습니까?")) { AppState.data.homework = AppState.data.homework.filter(h => h.id !== actionNode.dataset.id); syncData(); showToast("과제가 삭제되었습니다."); renderAdminDashboard(); } }
         else if (action === 'toggle-user') { const user = AppState.data.users.find(u => String(u.id) === String(actionNode.dataset.id)); if(user) user.active = !user.active; syncData(); showToast("상태가 변경되었습니다."); }
@@ -628,8 +677,6 @@ document.body.addEventListener('click', (e) => {
         else if (action === 'open-admin-modal') { AppState.adminModal = { isOpen: true, mode: actionNode.dataset.mode, studentId: actionNode.dataset.id || null }; renderAdminDashboard(); }
         else if (action === 'close-admin-modal') { AppState.adminModal.isOpen = false; renderAdminDashboard(); }
         else if (action === 'review-hw') { const sub = AppState.data.hwSubmissions.find(s => s.id === actionNode.dataset.subid); if(sub) { sub.status = actionNode.dataset.status; syncData(); showToast("검사 상태 변경됨"); } }
-        
-        // 🔥 결제 승인 시 자동으로 일수 계산 연동
         else if (action === 'approve-payment') { 
             const p = AppState.data.payments.find(p => p.id === actionNode.dataset.id); 
             if(p) { 
@@ -648,7 +695,6 @@ document.body.addEventListener('click', (e) => {
         }
         else if (action === 'open-ai-modal') { AppState.aiModal = { isOpen: true, studentId: actionNode.dataset.id }; document.getElementById('modal-ai-report').classList.remove('hidden'); document.getElementById('ai-report-textarea').value = ''; }
         else if (action === 'close-ai-modal') { AppState.aiModal.isOpen = false; document.getElementById('modal-ai-report').classList.add('hidden'); }
-        // 🔥 [AI 리포트 개인화] 학생 데이터 기반 맞춤형 텍스트 생성기
         else if (action === 'generate-ai-text') {
             const sid = AppState.aiModal.studentId; const student = AppState.data.users.find(u => u.id === sid); 
             const hwSub = (AppState.data.hwSubmissions||[]).filter(s => s.studentId === sid);
@@ -678,10 +724,10 @@ document.body.addEventListener('submit', async (e) => {
     try {
         if(e.target.id === 'form-login') {
             const id = document.getElementById('login-id').value.trim(); const pw = document.getElementById('login-pw').value.trim();
-            if(id === 'studycampus' && pw === 'studycampus26') { AppState.currentUser = { id: 'admin', name: '최고관리자', role: 'admin' }; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); switchView('admin'); } 
+            if(id === 'studycampus' && pw === 'studycampus26') { AppState.currentUser = { id: 'admin', name: '최고관리자', role: 'admin' }; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); switchView('admin'); } 
             else {
                 const user = (AppState.data.users||[]).find(u => u.id === id);
-                if(user && user.active && (!user.pw || user.pw === pw)) { AppState.currentUser = user; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); sessionStorage.removeItem('studycampus_popup_shown'); switchView('student'); } 
+                if(user && user.active && (!user.pw || user.pw === pw)) { AppState.currentUser = user; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); sessionStorage.removeItem('studycampus_popup_shown'); switchView('student'); } 
                 else showToast("계정 정보나 비밀번호를 확인해주세요.");
             }
         }
@@ -700,7 +746,7 @@ document.body.addEventListener('submit', async (e) => {
             if(foundUser) alert(`가입된 아이디는 [ ${foundUser.id} ] 입니다.`);
             else alert("일치하는 회원 정보가 없습니다.");
         }
-        // 🔥 비밀번호 찾기 (변경) 기능
+        // 🔥 비밀번호 재설정 기능
         else if(e.target.id === 'form-reset-pw') {
             const id = document.getElementById('reset-id').value.trim(); const p = document.getElementById('reset-phone').value.trim();
             const newPw = document.getElementById('reset-new-pw').value.trim(); const confirmPw = document.getElementById('reset-new-pw-confirm').value.trim();
@@ -719,7 +765,7 @@ document.body.addEventListener('submit', async (e) => {
                 AppState.data.users[userIdx].name = name; AppState.data.users[userIdx].school = school; AppState.data.users[userIdx].grade = grade; 
                 AppState.data.users[userIdx].phone = phone; AppState.data.users[userIdx].email = email;
                 if(pw) AppState.data.users[userIdx].pw = pw; 
-                AppState.currentUser = AppState.data.users[userIdx]; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); 
+                AppState.currentUser = AppState.data.users[userIdx]; localStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); 
             } 
             showToast("회원 정보가 수정되었습니다."); document.getElementById('modal-student-edit').classList.add('hidden'); syncData(); renderCurrentView();
         }
@@ -760,7 +806,7 @@ document.body.addEventListener('submit', async (e) => {
         }
         else if(e.target.id === 'form-admin-material') {
             const fileInput = document.getElementById('mat-file'); const file = fileInput.files[0]; let fileData = null; let fileName = '';
-            if (file) { if(file.size > 100 * 1024 * 1024) return showToast('⚠️ 100MB 이하만 가능'); showToast("서버 전송 중..."); fileData = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); }); fileName = file.name; }
+            if (file) { if(file.size > 100 * 1024 * 1024) return showToast('⚠️ 100MB 이하만 가능'); showToast("서버 전송 중... (용량이 클수록 시간이 걸립니다)"); fileData = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); }); fileName = file.name; }
             if(!AppState.data.materials) AppState.data.materials = []; AppState.data.materials.unshift({ id: generateId(), category: document.getElementById('mat-cat').value, title: document.getElementById('mat-title').value, desc: document.getElementById('mat-desc').value, fileData, fileName }); syncData(); showToast("업로드 완료"); e.target.reset();
         }
         else if(e.target.id === 'form-admin-hw') {
@@ -785,10 +831,18 @@ document.body.addEventListener('submit', async (e) => {
             if(e.target.id === 'form-admin-settings') {
                 // 롤링 배너 설정 저장
                 const rb = [];
-                for(let i=1; i<=3; i++) {
-                    const img = document.getElementById(`rb${i}-img`).value;
-                    const link = document.getElementById(`rb${i}-link`).value;
-                    if(img) rb.push({img, link});
+                for(let i=0; i<5; i++) {
+                    const tab = document.getElementById(`rb${i}-tab`).value.trim();
+                    const link = document.getElementById(`rb${i}-link`).value.trim();
+                    const fileInput = document.getElementById(`rb${i}-file`);
+                    const existingImg = document.getElementById(`rb${i}-existing-img`).value;
+
+                    let img = existingImg;
+                    if(fileInput && fileInput.dataset.base64) {
+                        img = fileInput.dataset.base64;
+                    }
+
+                    if(tab || img) { rb.push({tab, img, link}); }
                 }
                 AppState.data.settings.rollingBanners = rb;
 
@@ -801,19 +855,17 @@ document.body.addEventListener('submit', async (e) => {
             syncData(); showToast("수정 사항이 실시간으로 적용되었습니다.");
         }
     } catch(err) {
-        console.error("폼 제출 에러 처리:", err);
+        console.error("폼 제출 차단 오류 해결:", err);
         showToast("처리 중 데이터 에러가 발생했습니다.");
     }
 });
 
-// 🔥 앱 접속 시 자동 로그아웃 (무조건 랜딩페이지로 시작)
+// 🔥 앱 접속 시 자동 로그아웃 (새로고침 시 무조건 랜딩으로 시작)
 document.addEventListener('DOMContentLoaded', () => {
-    // 세션 클리어
     sessionStorage.removeItem('studycampus_session');
     localStorage.removeItem('studycampus_session');
     AppState.currentUser = null;
     
-    // UI 초기화 및 랜딩 뷰 스위치
     document.querySelectorAll('.global-element').forEach(el => el.classList.remove('hidden'));
     switchView('landing');
 });
