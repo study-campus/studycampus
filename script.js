@@ -48,7 +48,7 @@ function clearLectureTimer() { if(AppState.lectureTimer) { clearInterval(AppStat
 function clearBannerTimer() { if(rbTimer) { clearInterval(rbTimer); rbTimer = null; } }
 function normalizeSchool(name) { let s = name.trim(); if(s && s.endsWith('고')) s += '등학교'; return s; }
 
-// ------------------------- 파이어베이스 동기화 -------------------------
+// 파이어베이스 동기화
 const dbRef = ref(db, 'studycampus_data');
 onValue(dbRef, (snapshot) => {
     const serverData = snapshot.val();
@@ -66,8 +66,49 @@ onValue(dbRef, (snapshot) => {
 });
 function syncData() { set(dbRef, AppState.data); }
 
-// ------------------------- 라우팅 -------------------------
-function switchView(viewName) {
+// ------------------------- 🔥 URL 라우터 (딥링킹 연동) -------------------------
+window.addEventListener('hashchange', handleRoute);
+
+function handleRoute() {
+    let hash = window.location.hash.replace('#/', '');
+    if (!hash) hash = 'landing';
+
+    let mode = null;
+    if (['login', 'register', 'find-id', 'reset-pw'].includes(hash)) {
+        mode = hash;
+        hash = 'auth';
+    }
+
+    const user = AppState.currentUser;
+    
+    // 학생 전용 라우트 보호
+    if (['student', 'lecture-player', 'payment', 'home', 'homework', 'test', 'lectures', 'materials', 'community', 'mypage'].includes(hash)) {
+        if (!user || user.role !== 'student') { window.location.hash = '/login'; return; }
+        if (['home', 'homework', 'test', 'lectures', 'materials', 'community', 'mypage'].includes(hash)) {
+            AppState.studentTab = hash;
+            hash = 'student';
+        }
+    }
+    
+    // 관리자 전용 라우트 보호
+    if (['admin', 'users', 'deploy', 'payments', 'settings'].includes(hash)) {
+        if (!user || user.role !== 'admin') { window.location.hash = '/login'; return; }
+        if (['users', 'deploy', 'payments', 'settings'].includes(hash)) {
+            AppState.adminTab = hash;
+            hash = 'admin';
+        }
+    }
+
+    // 로그인된 상태에서 auth 접근 시 튕겨냄
+    if (hash === 'auth' && user) {
+        window.location.hash = user.role === 'admin' ? '/admin' : '/student';
+        return;
+    }
+
+    switchViewInternal(hash, mode);
+}
+
+function switchViewInternal(viewName, authMode) {
     clearLectureTimer(); 
     if(viewName !== 'landing') clearBannerTimer();
     if(viewName !== 'lecture-player') AppState.activeLecture = null;
@@ -77,9 +118,9 @@ function switchView(viewName) {
     const targetView = document.getElementById(`view-${viewName}`);
     if(targetView) targetView.classList.remove('hidden');
     
-    if (viewName === 'auth') switchAuthMode('login');
-    const isAppView = viewName === 'student' || viewName === 'admin' || viewName === 'payment' || viewName === 'lecture-player';
+    if (viewName === 'auth' && authMode) switchAuthMode(authMode);
     
+    const isAppView = viewName === 'student' || viewName === 'admin' || viewName === 'payment' || viewName === 'lecture-player';
     document.querySelectorAll('.global-element').forEach(el => el.classList.toggle('hidden', isAppView));
     
     if(!isAppView) renderNavbar();
@@ -92,7 +133,8 @@ function switchView(viewName) {
 function switchAuthMode(mode) {
     AppState.authMode = mode;
     ['login', 'register', 'find-id', 'reset-pw'].forEach(m => {
-        document.getElementById(`modal-${m}`).classList.toggle('hidden', m !== mode);
+        const el = document.getElementById(`modal-${m}`);
+        if(el) el.classList.toggle('hidden', m !== mode);
     });
 }
 
@@ -140,7 +182,6 @@ function renderLandingPage() {
     document.getElementById('ld-s1-n').textContent = ld.s1Num || ''; document.getElementById('ld-s1-t').textContent = ld.s1Txt || ''; document.getElementById('ld-s2-n').textContent = ld.s2Num || ''; document.getElementById('ld-s2-t').textContent = ld.s2Txt || ''; document.getElementById('ld-s3-n').textContent = ld.s3Num || ''; document.getElementById('ld-s3-t').textContent = ld.s3Txt || '';
     document.getElementById('ld-sec-title').textContent = ld.secTitle || ''; document.getElementById('ld-f1-b').textContent = ld.f1Badge || ''; document.getElementById('ld-f1-b').className = 'badge-' + (ld.f1Col || 'blue'); document.getElementById('ld-f1-t').textContent = ld.f1Title || ''; document.getElementById('ld-f1-d').textContent = ld.f1Desc || ''; document.getElementById('ld-f1-e').textContent = ld.f1Emoji || ''; document.getElementById('ld-f2-b').textContent = ld.f2Badge || ''; document.getElementById('ld-f2-b').className = 'badge-' + (ld.f2Col || 'red'); document.getElementById('ld-f2-t').textContent = ld.f2Title || ''; document.getElementById('ld-f2-d').textContent = ld.f2Desc || ''; document.getElementById('ld-f2-e').textContent = ld.f2Emoji || ''; document.getElementById('ld-bot-title').textContent = ld.botTitle || '';
     
-    // 롤링 배너 렌더링
     rbsData = AppState.data.settings?.rollingBanners || [];
     const tabsContainer = document.getElementById('mega-banner-tabs');
     const viewContainer = document.getElementById('mega-banner-view');
@@ -389,16 +430,16 @@ function renderLecturePlayer() {
         const lDone = p.done || p.percent >= 90;
         const isActive = (l.id === activeLecture.id);
         
-        let iconHtml = `<div style="width:24px; height:24px; border-radius:50%; background:#334155; color:white; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:bold; flex-shrink:0;">${idx+1}</div>`;
-        if(lDone) iconHtml = `<div style="width:24px; height:24px; border-radius:50%; background:#10b981; color:white; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:bold; flex-shrink:0;">✓</div>`;
-        else if(isActive) iconHtml = `<div style="width:24px; height:24px; border-radius:50%; background:#3b82f6; color:white; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:bold; flex-shrink:0;">${idx+1}</div>`;
+        let iconHtml = `<div id="playlist-icon-${l.id}" style="width:24px; height:24px; border-radius:50%; background:#334155; color:white; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:bold; flex-shrink:0;">${idx+1}</div>`;
+        if(lDone) iconHtml = `<div id="playlist-icon-${l.id}" style="width:24px; height:24px; border-radius:50%; background:#10b981; color:white; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:bold; flex-shrink:0;">✓</div>`;
+        else if(isActive) iconHtml = `<div id="playlist-icon-${l.id}" style="width:24px; height:24px; border-radius:50%; background:#3b82f6; color:white; display:flex; justify-content:center; align-items:center; font-size:12px; font-weight:bold; flex-shrink:0;">${idx+1}</div>`;
 
         html += `
         <div class="playlist-item ${isActive?'active':''}" data-action="open-lecture" data-id="${l.id}">
             ${iconHtml}
             <div style="flex:1;">
                 <div style="font-size:14px; font-weight:700; color:${isActive?'#60a5fa':'white'}; margin-bottom:4px; line-height:1.3;">${idx+1}강. ${l.title}</div>
-                <div style="font-size:12px; color:${lDone?'#10b981':'#64748b'};">${lDone?'수강완료':(p.percent+'% 진행중')}</div>
+                <div id="playlist-prog-text-${l.id}" style="font-size:12px; color:${lDone?'#10b981':'#64748b'};">${lDone?'수강완료':(p.percent+'% 진행중')}</div>
             </div>
         </div>`;
     });
@@ -406,23 +447,34 @@ function renderLecturePlayer() {
     html += `</div></div></div>`;
     container.innerHTML = html;
 
+    // 🔥 진행률 실시간 반영 로직 (DOM 직접 조작으로 끊김 해결)
     if (!isDone) {
         clearLectureTimer();
         let currentProg = prog.percent;
         AppState.lectureTimer = setInterval(() => {
             currentProg += 5; 
             const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id);
+            
             if (currentProg >= 90) { 
                 currentProg = 100; clearLectureTimer(); 
                 AppState.data.users[userIdx].lectureProgress[activeLecture.id] = { percent: 100, done: true }; 
                 syncData(); showToast("🎉 수강 완료 인정!"); 
-                renderLecturePlayer(); 
             } 
             else { AppState.data.users[userIdx].lectureProgress[activeLecture.id] = { percent: currentProg, done: false }; }
             
-            const bar = document.getElementById('live-progress-bar'); const txt = document.getElementById('live-progress-text');
+            // DOM 직접 업데이트 (전체 리렌더 방지)
+            const bar = document.getElementById('live-progress-bar');
+            const txt = document.getElementById('live-progress-text');
             const topTxt = document.getElementById('player-top-progress');
-            if(bar) bar.style.width = currentProg + '%'; if(txt) txt.textContent = currentProg + '%'; if(topTxt) topTxt.textContent = currentProg + '%';
+            const plTxt = document.getElementById(`playlist-prog-text-${activeLecture.id}`);
+            const plIcon = document.getElementById(`playlist-icon-${activeLecture.id}`);
+            
+            if(bar) bar.style.width = currentProg + '%'; 
+            if(txt) txt.textContent = currentProg + '%'; 
+            if(topTxt) topTxt.textContent = currentProg + '%';
+            if(plTxt) { plTxt.textContent = currentProg >= 90 ? '수강완료' : `${currentProg}% 진행중`; if(currentProg >= 90) plTxt.style.color = '#10b981'; }
+            if(currentProg >= 90 && plIcon) { plIcon.innerHTML = '✓'; plIcon.style.background = '#10b981'; }
+            
         }, 5000); 
     }
 }
@@ -446,7 +498,7 @@ function renderAdminDashboard() {
 
         html += `
             <div class="admin-card" style="grid-column:1/-1;"><h2>📢 공지 배포 (모든 학생 알림)</h2><form id="form-admin-notice"><input type="text" id="adm-notice-title" class="admin-input" required placeholder="공지 제목"><textarea id="adm-notice-content" class="admin-input" style="height:100px; resize:none;" required placeholder="내용"></textarea><button type="submit" class="btn-primary" style="width:100%;">공지 올리기</button></form></div>
-            <div class="admin-card" style="grid-column:1/-1;"><h2>📝 주간 과제 배포 및 관리</h2><div style="background:#0f172a; padding:15px; border-radius:8px; margin-bottom:20px; font-size:13px; color:#94a3b8; line-height:1.5;">💡 현재 배포된 가장 최신 주차는 <strong style="color:#60a5fa; font-size:15px;">${currentMaxWeek}주차</strong> 입니다.<br>새로운 주차 번호를 배포하면 학생들이 앱을 열 때 자동으로 해당 주차로 화면이 갱신됩니다. (이전 주차 내용도 언제든 추가/수정 가능)</div><form id="form-admin-hw"><select id="hw-target" class="admin-input"><option value="all">전체 배포</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select><div style="display:flex; gap:10px;"><div style="flex:1;"><label class="admin-label">주차 번호 (숫자만 기입)</label><input type="number" id="hw-week" class="admin-input" value="${currentMaxWeek}" required style="margin:0;"></div><div style="flex:1;"><label class="admin-label">숙제 제출 날짜 (달력 선택 시 자동 요일 계산)</label><input type="date" id="hw-date" class="admin-input" required style="margin:0;"></div></div><textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px; margin-top:10px;"></textarea><button type="submit" class="btn-primary" style="width:100%;">새 숙제 배포하기</button></form><h3 style="margin-top:40px; margin-bottom:15px; color:#60a5fa; font-size:15px; border-bottom:1px solid #334155; padding-bottom:10px;">등록된 과제 목록 관리 (수정/삭제)</h3><div class="table-responsive"><table class="admin-table" style="min-width:600px;"><thead><tr><th>주차</th><th>날짜(요일)</th><th>내용</th><th>대상</th><th>관리</th></tr></thead><tbody>`;
+            <div class="admin-card" style="grid-column:1/-1;"><h2>📝 주간 과제 배포 및 관리</h2><div style="background:#0f172a; padding:15px; border-radius:8px; margin-bottom:20px; font-size:13px; color:#94a3b8; line-height:1.5;">💡 현재 배포된 가장 최신 주차는 <strong style="color:#60a5fa; font-size:15px;">${currentMaxWeek}주차</strong> 입니다.<br>새로운 주차 번호를 배포하면 학생들이 앱을 열 때 자동으로 해당 주차로 화면이 갱신됩니다.</div><form id="form-admin-hw"><select id="hw-target" class="admin-input"><option value="all">전체 배포</option>${(data.users||[]).map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}</select><div style="display:flex; gap:10px;"><div style="flex:1;"><label class="admin-label">주차 번호 (숫자만 기입)</label><input type="number" id="hw-week" class="admin-input" value="${currentMaxWeek}" required style="margin:0;"></div><div style="flex:1;"><label class="admin-label">숙제 제출 날짜 (달력 선택 시 자동 요일 계산)</label><input type="date" id="hw-date" class="admin-input" required style="margin:0;"></div></div><textarea id="hw-desc" class="admin-input" placeholder="과제 내용" required style="height:80px; margin-top:10px;"></textarea><button type="submit" class="btn-primary" style="width:100%;">새 숙제 배포하기</button></form><h3 style="margin-top:40px; margin-bottom:15px; color:#60a5fa; font-size:15px; border-bottom:1px solid #334155; padding-bottom:10px;">등록된 과제 목록 관리 (수정/삭제)</h3><div class="table-responsive"><table class="admin-table" style="min-width:600px;"><thead><tr><th>주차</th><th>날짜(요일)</th><th>내용</th><th>대상</th><th>관리</th></tr></thead><tbody>`;
         if(!data.homework || data.homework.length===0) { html += `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">등록된 과제가 없습니다.</td></tr>`; } 
         else { const sortedHw = [...data.homework].sort((a,b) => parseInt(b.week) - parseInt(a.week) || new Date(a.date) - new Date(b.date)); sortedHw.forEach(h => { html += `<tr><td style="font-weight:bold;">${h.week}주차</td><td>${h.date}<br><span style="font-size:11px; color:#94a3b8;">${h.day}</span></td><td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${h.desc}">${h.desc}</td><td>${h.target==='all'?'전체':h.target}</td><td><button class="btn-sm btn-outline" data-action="edit-admin-hw" data-id="${h.id}">내용 수정</button><button class="btn-sm btn-danger" style="background:#ef4444; border:none; margin-left:5px; color:white;" data-action="delete-admin-hw" data-id="${h.id}">삭제</button></td></tr>`; }); }
         html += `</tbody></table></div></div>
@@ -470,7 +522,7 @@ function renderAdminDashboard() {
             <form id="form-admin-system" style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;">
                     <h3 style="margin-bottom:15px; font-size:1rem; color:white;">학생 숙제 페이지 안내(경고) 문구</h3>
-                    <textarea id="set-hw-warning" class="admin-input" style="height:100px; resize:none;" placeholder="숙제 제출 기한 등 안내 문구">${set.hwWarning || "⚠️ 숙제 제출 기한 : 당일 저녁 12시\n⚠️ 늦어지는 경우 미리 사유+인증 필요 (ex. 학원증)\n⚠️ 미제출시 경고 / 경고2회 = 옐로카드 / 옐로카드2회 = 레드카드\n⚠️ 필기가 비어있을 경우 미제출로 간주"}</textarea>
+                    <textarea id="set-hw-warning" class="admin-input" style="height:100px; resize:none;" placeholder="숙제 제출 기한 등 안내 문구">${set.hwWarning || ""}</textarea>
                 </div>
                 <div style="background:var(--bg-dark); padding:20px; border-radius:12px; grid-column:1/-1;">
                     <h3 style="margin-bottom:15px; font-size:1rem; color:white;">학생 홈 상단 공지 배너</h3>
@@ -480,16 +532,8 @@ function renderAdminDashboard() {
                     <div style="display:flex; justify-content:space-between; margin-bottom:15px;"><h3 style="font-size:1rem; color:white;">학생 로그인 자동 팝업창 (모달 2개 버튼 지원)</h3><label><input type="checkbox" id="set-pop-active" ${pop.active?'checked':''}> 활성화</label></div>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
                         <input type="text" id="set-pop-tag" class="admin-input" value="${pop.tag}"><input type="text" id="set-pop-title" class="admin-input" value="${pop.title}"><textarea id="set-pop-desc" class="admin-input" style="grid-column:1/-1; height:60px;">${pop.desc}</textarea>
-                        
-                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);">
-                            <h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 내용 (위)</h4>
-                            <input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}"><input type="text" id="set-pop-b1-url" class="admin-input" value="${pop.b1Url||''}" placeholder="이동할 링크 URL">
-                        </div>
-                        
-                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);">
-                            <h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 내용 (아래)</h4>
-                            <input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}"><input type="text" id="set-pop-b2-url" class="admin-input" value="${pop.b2Url||''}" placeholder="이동할 링크 URL">
-                        </div>
+                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 1 내용 (위)</h4><input type="text" id="set-pop-b1-t" class="admin-input" value="${pop.b1Title}"><input type="text" id="set-pop-b1-d" class="admin-input" value="${pop.b1Desc}"><input type="text" id="set-pop-b1-url" class="admin-input" value="${pop.b1Url||''}" placeholder="이동할 링크 URL"></div>
+                        <div style="background:#1e293b; padding:15px; border-radius:8px; border:1px solid var(--border);"><h4 style="margin-bottom:10px; font-size:13px; color:#94a3b8;">박스 2 내용 (아래)</h4><input type="text" id="set-pop-b2-t" class="admin-input" value="${pop.b2Title}"><input type="text" id="set-pop-b2-d" class="admin-input" value="${pop.b2Desc}"><input type="text" id="set-pop-b2-url" class="admin-input" value="${pop.b2Url||''}" placeholder="이동할 링크 URL"></div>
                     </div>
                 </div>
                 <button type="submit" class="btn-primary" style="grid-column:1/-1; padding:15px;">시스템 설정 저장</button>
@@ -615,7 +659,7 @@ document.body.addEventListener('click', (e) => {
         }
         else if (action === 'apply-crop') {
             if(!cropper) return;
-            const croppedDataUrl = cropper.getCroppedCanvas({ width: 1200 }).toDataURL('image/jpeg', 0.8);
+            const croppedDataUrl = cropper.getCroppedCanvas({ width: 1000 }).toDataURL('image/jpeg', 0.6); // 1000px 리사이즈/용량최적화
             
             const existingInput = document.getElementById(`rb${currentCropIdx}-existing-img`);
             const previewImg = document.getElementById(`rb${currentCropIdx}-preview`);
@@ -632,19 +676,19 @@ document.body.addEventListener('click', (e) => {
         }
         
         else if (action === 'change-banner') { currentBannerIdx = parseInt(actionNode.dataset.idx); updateBannerUI(); startBanner(); }
-        else if (action === 'nav') switchView(actionNode.dataset.target);
+        // 🔥 URL 딥링크(해시) 라우팅 연동
+        else if (action === 'nav') window.location.hash = '/' + actionNode.dataset.target;
         else if (action === 'auth-toggle') {
-            if(AppState.currentUser) { AppState.currentUser = null; sessionStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); switchView('landing'); }
-            else { switchView('auth'); switchAuthMode('login'); }
+            if(AppState.currentUser) { AppState.currentUser = null; sessionStorage.removeItem('studycampus_session'); showToast("로그아웃 되었습니다."); window.location.hash = '/landing'; }
+            else { window.location.hash = '/login'; }
         }
         else if (action === 'auth-register') {
-            if (AppState.currentUser) switchView(AppState.currentUser.role === 'admin' ? 'admin' : 'student');
-            else { switchView('auth'); switchAuthMode('register'); }
+            if (AppState.currentUser) window.location.hash = AppState.currentUser.role === 'admin' ? '/admin' : '/student';
+            else { window.location.hash = '/register'; }
         }
-        else if (action === 'switch-auth') switchAuthMode(actionNode.dataset.mode);
-        else if (action === 'switch-admin-tab') { AppState.adminTab = actionNode.dataset.tab; renderAdminDashboard(); }
-        else if (action === 'switch-student-tab') { clearLectureTimer(); AppState.studentTab = actionNode.dataset.tab; renderStudentDashboard(); }
-        else if (action === 'back-to-mypage') { AppState.studentTab = 'mypage'; switchView('student'); }
+        else if (action === 'switch-auth') window.location.hash = '/' + actionNode.dataset.mode;
+        else if (action === 'switch-admin-tab') window.location.hash = '/' + actionNode.dataset.tab;
+        else if (action === 'switch-student-tab') window.location.hash = '/' + actionNode.dataset.tab;
         
         else if (action === 'open-student-edit') {
             const me = AppState.data.users.find(u => u.id === AppState.currentUser.id) || AppState.currentUser;
@@ -657,9 +701,21 @@ document.body.addEventListener('click', (e) => {
             document.getElementById('modal-student-edit').classList.remove('hidden');
         }
         else if (action === 'close-student-edit') { document.getElementById('modal-student-edit').classList.add('hidden'); }
+        
+        // 🔥 알림 드롭다운 일괄 처리 (완벽 유지)
         else if (action === 'toggle-notif') { const drop = document.getElementById('notif-dropdown'); if(drop) { drop.classList.toggle('hidden'); } }
-        else if (action === 'read-all-notif') { let upd = false; (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }}); if(upd) { syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("모두 읽음 처리되었습니다."); renderStudentDashboard(); } }
-        else if (action === 'delete-all-notif') { if(confirm("모든 알림을 삭제하시겠습니까?")) { AppState.data.alerts = (AppState.data.alerts||[]).filter(a => a.studentId !== AppState.currentUser.id); syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("알림이 모두 삭제되었습니다."); renderStudentDashboard(); } }
+        else if (action === 'read-all-notif') {
+            let upd = false;
+            (AppState.data.alerts||[]).forEach(a => { if(a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; }});
+            if(upd) { syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("모두 읽음 처리되었습니다."); renderStudentDashboard(); }
+        }
+        else if (action === 'delete-all-notif') {
+            if(confirm("모든 알림을 삭제하시겠습니까?")) {
+                AppState.data.alerts = (AppState.data.alerts||[]).filter(a => a.studentId !== AppState.currentUser.id);
+                syncData(); document.getElementById('notif-badge').classList.add('hidden'); showToast("알림이 모두 삭제되었습니다."); renderStudentDashboard();
+            }
+        }
+        
         else if (action === 'close-popup') { document.getElementById('student-auto-popup').classList.add('hidden'); sessionStorage.setItem('studycampus_popup_shown', 'true'); }
         else if (action === 'hide-popup-today') { localStorage.setItem('studycampus_hide_popup', new Date().toISOString().split('T')[0]); document.getElementById('student-auto-popup').classList.add('hidden'); showToast("오늘 하루 보지 않습니다."); }
         else if (action === 'change-week') { const dir = parseInt(actionNode.dataset.dir); let newWeek = AppState.currentHwWeekNumber + dir; if (newWeek < 1) newWeek = 1; AppState.currentHwWeekNumber = newWeek; renderStudentDashboard(); }
@@ -670,8 +726,9 @@ document.body.addEventListener('click', (e) => {
         else if (action === 'delete-post') { if(confirm("이 게시물을 완전히 삭제하시겠습니까?")) { AppState.data.community = AppState.data.community.filter(c => c.id !== actionNode.dataset.id); if(AppState.activePostId === actionNode.dataset.id) AppState.activePostId = null; syncData(); showToast("삭제되었습니다."); renderStudentDashboard(); } }
         else if (action === 'toggle-like') { const post = AppState.data.community.find(c => c.id === actionNode.dataset.id); if(post) { if(!post.likes) post.likes = []; const meId = AppState.currentUser.id; const idx = post.likes.indexOf(meId); if(idx > -1) post.likes.splice(idx, 1); else post.likes.push(meId); syncData(); } }
         
-        else if (action === 'open-lecture') { AppState.activeLecture = AppState.data.lectures.find(l => l.id === actionNode.dataset.id); switchView('lecture-player'); }
-        else if (action === 'close-lecture') { switchView('student'); }
+        else if (action === 'open-lecture') { AppState.activeLecture = AppState.data.lectures.find(l => l.id === actionNode.dataset.id); window.location.hash = '/lecture-player'; }
+        else if (action === 'close-lecture') { window.location.hash = '/lectures'; }
+        
         else if (action === 'play-video') {
             clearLectureTimer(); const lecId = AppState.activeLecture.id; const userIdx = AppState.data.users.findIndex(u => u.id === AppState.currentUser.id); if(!AppState.data.users[userIdx].lectureProgress) AppState.data.users[userIdx].lectureProgress = {};
             let currentProg = AppState.data.users[userIdx].lectureProgress[lecId]?.percent || 0;
@@ -679,15 +736,20 @@ document.body.addEventListener('click', (e) => {
             
             AppState.lectureTimer = setInterval(() => {
                 currentProg += 5; 
-                if (currentProg >= 90) { currentProg = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 수강 완료 인정!"); renderLecturePlayer(); } 
+                if (currentProg >= 90) { currentProg = 100; clearLectureTimer(); AppState.data.users[userIdx].lectureProgress[lecId] = { percent: 100, done: true }; syncData(); showToast("🎉 수강 완료 인정!"); } 
                 else { AppState.data.users[userIdx].lectureProgress[lecId] = { percent: currentProg, done: false }; }
                 const bar = document.getElementById('live-progress-bar'); const txt = document.getElementById('live-progress-text');
-                if(bar) bar.style.width = currentProg + '%'; if(txt) txt.textContent = currentProg + '%';
+                const topTxt = document.getElementById('player-top-progress');
+                const plTxt = document.getElementById(`playlist-prog-text-${lecId}`);
+                const plIcon = document.getElementById(`playlist-icon-${lecId}`);
+                if(bar) bar.style.width = currentProg + '%'; if(txt) txt.textContent = currentProg + '%'; if(topTxt) topTxt.textContent = currentProg + '%';
+                if(plTxt) { plTxt.textContent = currentProg >= 90 ? '수강완료' : `${currentProg}% 진행중`; if(currentProg >= 90) plTxt.style.color = '#10b981'; }
+                if(currentProg >= 90 && plIcon) { plIcon.innerHTML = '✓'; plIcon.style.background = '#10b981'; }
             }, 5000); 
         }
         else if (action === 'trigger-file') { const fi = document.getElementById(`hw-file-${actionNode.dataset.id}`); if(fi) fi.click(); }
         else if (action === 'cancel-hw') { AppState.data.hwSubmissions = AppState.data.hwSubmissions.filter(s => s.id !== actionNode.dataset.subid); syncData(); showToast("기존 제출본 삭제됨"); }
-        else if (action === 'delete-account') { if(confirm("탈퇴하시면 현재까지 모든 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴하시겠습니까?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); sessionStorage.removeItem('studycampus_session'); AppState.currentUser = null; switchView('landing'); } }
+        else if (action === 'delete-account') { if(confirm("탈퇴하시면 현재까지 모든 데이터가 삭제되며 되돌릴 수 없습니다. 정말 탈퇴하시겠습니까?")) { AppState.data.users = AppState.data.users.filter(u => u.id !== AppState.currentUser.id); syncData(); sessionStorage.removeItem('studycampus_session'); AppState.currentUser = null; window.location.hash='/landing'; } }
         
         // 관리자
         else if (action === 'edit-admin-hw') { const hw = AppState.data.homework.find(h => h.id === actionNode.dataset.id); if(hw) { const newDesc = prompt("과제 내용을 수정하세요:", hw.desc); if(newDesc !== null && newDesc.trim() !== "") { hw.desc = newDesc.trim(); syncData(); showToast("수정되었습니다."); renderAdminDashboard(); } } }
@@ -746,10 +808,10 @@ document.body.addEventListener('submit', async (e) => {
     try {
         if(e.target.id === 'form-login') {
             const id = document.getElementById('login-id').value.trim(); const pw = document.getElementById('login-pw').value.trim();
-            if(id === 'studycampus' && pw === 'studycampus26') { AppState.currentUser = { id: 'admin', name: '최고관리자', role: 'admin' }; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); switchView('admin'); } 
+            if(id === 'studycampus' && pw === 'studycampus26') { AppState.currentUser = { id: 'admin', name: '최고관리자', role: 'admin' }; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); window.location.hash='/admin'; } 
             else {
                 const user = (AppState.data.users||[]).find(u => u.id === id);
-                if(user && user.active && (!user.pw || user.pw === pw)) { AppState.currentUser = user; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); sessionStorage.removeItem('studycampus_popup_shown'); switchView('student'); } 
+                if(user && user.active && (!user.pw || user.pw === pw)) { AppState.currentUser = user; sessionStorage.setItem('studycampus_session', JSON.stringify(AppState.currentUser)); sessionStorage.removeItem('studycampus_popup_shown'); window.location.hash='/student'; } 
                 else showToast("계정 정보나 비밀번호를 확인해주세요.");
             }
         }
@@ -759,7 +821,7 @@ document.body.addEventListener('submit', async (e) => {
             const d = new Date(); d.setDate(d.getDate() + 30);
             const normalizedSchool = normalizeSchool(document.getElementById('reg-school').value);
             AppState.data.users.push({ id, name: document.getElementById('reg-name').value || id, phone: document.getElementById('reg-phone').value.trim(), email: document.getElementById('reg-email').value.trim(), pw: document.getElementById('reg-pw').value, school: normalizedSchool, grade: document.getElementById('reg-grade').value, role: 'student', active: true, xp: 0, ticketExpiry: d.toISOString().split('T')[0] });
-            syncData(); showToast("가입 완료! 로그인 해주세요."); switchAuthMode('login');
+            syncData(); showToast("가입 완료! 로그인 해주세요."); window.location.hash='/login';
         }
         else if(e.target.id === 'form-find-id') {
             const n = document.getElementById('find-name').value.trim(); const p = document.getElementById('find-phone').value.trim();
@@ -774,7 +836,7 @@ document.body.addEventListener('submit', async (e) => {
             const userIdx = (AppState.data.users||[]).findIndex(u => u.id === id && u.phone === p);
             if(userIdx > -1) {
                 AppState.data.users[userIdx].pw = newPw;
-                syncData(); showToast("비밀번호가 성공적으로 변경되었습니다."); switchAuthMode('login');
+                syncData(); showToast("비밀번호가 성공적으로 변경되었습니다."); window.location.hash='/login';
             } else alert("일치하는 회원 정보가 없습니다.");
         }
         else if(e.target.id === 'form-student-edit') {
@@ -793,7 +855,7 @@ document.body.addEventListener('submit', async (e) => {
             const fileInput = document.getElementById('pay-req-file'); const b64 = fileInput.dataset.base64; if(!b64) return showToast("사진을 첨부해주세요.");
             if(!AppState.data.payments) AppState.data.payments = [];
             AppState.data.payments.unshift({ id: generateId(), userId: AppState.currentUser.id, userName: AppState.currentUser.name, phone: document.getElementById('pay-req-phone').value, item: document.getElementById('pay-req-item').value, amount: "별도", image: b64, status: '승인대기', date: new Date().toISOString().split('T')[0] });
-            syncData(); showToast("결제 승인 요청 전송됨"); AppState.studentTab = 'mypage'; switchView('student'); e.target.reset();
+            syncData(); showToast("결제 승인 요청 전송됨"); AppState.studentTab = 'mypage'; window.location.hash='/mypage'; e.target.reset();
         }
         else if(e.target.id === 'form-admin-payment-settings') {
             if(!AppState.data.settings) AppState.data.settings = {};
@@ -851,9 +913,15 @@ document.body.addEventListener('submit', async (e) => {
             if(e.target.id === 'form-admin-settings') {
                 const rb = [];
                 for(let i=0; i<5; i++) {
-                    const tab = document.getElementById(`rb${i}-tab`).value.trim();
-                    const link = document.getElementById(`rb${i}-link`).value.trim();
-                    const existingImg = document.getElementById(`rb${i}-existing-img`).value;
+                    const tabEl = document.getElementById(`rb${i}-tab`);
+                    const linkEl = document.getElementById(`rb${i}-link`);
+                    const imgEl = document.getElementById(`rb${i}-existing-img`);
+                    if(!tabEl) continue;
+                    
+                    const tab = tabEl.value.trim();
+                    const link = linkEl.value.trim();
+                    const existingImg = imgEl.value;
+                    
                     if(tab || existingImg) { rb.push({tab, img: existingImg, link}); }
                 }
                 AppState.data.settings.rollingBanners = rb;
@@ -872,24 +940,13 @@ document.body.addEventListener('submit', async (e) => {
     }
 });
 
-// 🔥 새로고침 시 로그인(세션) 자동 유지, 창 닫으면 자동 로그아웃되도록 적용 완료
+// 🔥 새로고침(F5) 시 세션 유지 및 창 닫을 때만 삭제되도록 SessionStorage 적용
 document.addEventListener('DOMContentLoaded', () => {
     try {
         const session = sessionStorage.getItem('studycampus_session');
         if (session) AppState.currentUser = JSON.parse(session);
     } catch (e) {}
-
-    if (AppState.currentUser) {
-        document.querySelectorAll('.global-element').forEach(el => el.classList.add('hidden'));
-        if (AppState.currentUser.role === 'admin') {
-            AppState.adminTab = 'users';
-            switchView('admin');
-        } else {
-            AppState.studentTab = 'home';
-            switchView('student');
-        }
-    } else {
-        document.querySelectorAll('.global-element').forEach(el => el.classList.remove('hidden'));
-        switchView('landing');
-    }
+    
+    // 초기 해시 상태로 이동
+    handleRoute();
 });
