@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>StudyCampus</title>
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -38,8 +42,8 @@
                             <div><strong id="ld-s3-n"></strong><br><span id="ld-s3-t"></span></div>
                         </div>
                         <div class="hero-btns">
-                            <button class="btn-white" data-action="nav" data-target="auth">무료 상담 신청</button>
-                            <button class="btn-white-outline" data-action="nav" data-target="auth">학생 로그인</button>
+                            <button class="btn-white" data-action="nav" data-target="register">무료 상담 신청</button>
+                            <button class="btn-white-outline" data-action="nav" data-target="login">학생 로그인</button>
                         </div>
                     </div>
                     <div class="hero-icon">🚀</div>
@@ -67,7 +71,7 @@
             </div>
             <div class="bottom-cta-banner">
                 <h2 id="ld-bot-title"></h2>
-                <button class="btn-white" data-action="nav" data-target="auth" style="color:var(--primary); margin-top:20px;">학습 시작하기</button>
+                <button class="btn-white" data-action="nav" data-target="login" style="color:var(--primary); margin-top:20px;">학습 시작하기</button>
             </div>
         </section>
 
@@ -287,6 +291,19 @@
         </header>
         <main class="admin-main" id="admin-dash-content"></main>
     </section>
+
+    <div id="modal-crop" class="modal-overlay hidden">
+        <div class="modal-content" style="max-width:800px; width:95%; padding: 25px;">
+            <h2 class="modal-title" style="margin-bottom: 20px;">✂️ 이미지 비율 맞추기 (자르기)</h2>
+            <div style="width: 100%; max-height: 50vh; overflow: hidden; margin-bottom: 20px; background:#000; border-radius:12px;">
+                <img id="crop-image-target" src="" style="max-width: 100%; display:block;">
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-white-outline" data-action="close-crop" style="flex:1; border-color:#475569; color:#94a3b8;">취소</button>
+                <button class="btn-primary" data-action="apply-crop" style="flex:1; background:#2563eb;">자르기 적용</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="app-footer global-element">
         <p><strong>STUDYCAMPUS | 대표: 이지호</strong><br><span style="color:var(--text-muted); font-size:12px;">이용약관 | 개인정보처리방침 | 환불규정</span></p>
