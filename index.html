@@ -25,6 +25,16 @@
 
     <main class="global-element" style="flex:1; display:flex; flex-direction:column;">
         <section id="view-landing" class="view" style="flex:1;">
+            
+            <div class="rolling-banner-container">
+                <div class="rolling-banner">
+                    <span class="rolling-text"></span>
+                    <span class="rolling-text"></span>
+                    <span class="rolling-text"></span>
+                    <span class="rolling-text"></span>
+                </div>
+            </div>
+
             <div class="landing-container">
                 <div class="hero-banner">
                     <div class="hero-content">
@@ -56,7 +66,6 @@
                     </div>
                 </div>
             </div>
-            
             <div class="bottom-cta-banner">
                 <h2 id="ld-bot-title"></h2>
                 <button class="btn-white" data-action="nav" data-target="auth" style="color:var(--primary); margin-top:20px;">학습 시작하기</button>
@@ -124,7 +133,17 @@
                     🔔<span id="notif-badge" class="hidden" style="position:absolute; top:-2px; right:-2px; background:red; width:8px; height:8px; border-radius:50%;"></span>
                 </span>
                 <button class="stu-btn-outline" data-action="auth-toggle">로그아웃</button>
-                <div id="notif-dropdown" class="notif-box hidden"><div class="notif-header">최근 알림</div><div id="notif-list" class="notif-list"></div></div>
+                
+                <div id="notif-dropdown" class="notif-box hidden">
+                    <div class="notif-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>최근 알림</span>
+                        <div style="display:flex; gap:10px;">
+                            <button class="btn-text btn-sm" data-action="read-all-notif" style="padding:0; font-size:12px; color:#60a5fa;">모두 읽음</button>
+                            <button class="btn-text btn-sm" data-action="delete-all-notif" style="padding:0; font-size:12px; color:#ef4444;">모두 삭제</button>
+                        </div>
+                    </div>
+                    <div id="notif-list" class="notif-list"></div>
+                </div>
             </div>
         </header>
         <main class="stu-main" id="student-dash-content"></main>
@@ -231,7 +250,6 @@
 
     <section id="view-admin" class="view hidden admin-wrapper">
         <div id="admin-idle-alerts" style="position:fixed; top:75px; left:50%; transform:translateX(-50%); z-index:9999; display:flex; flex-direction:column; gap:10px; width:90%; max-width:600px; pointer-events:none;"></div>
-        
         <div class="admin-top-bar">🟢 클라우드 연동중</div>
         <header class="admin-header">
             <div class="admin-logo"><span class="logo-font">studycampus</span> <span class="badge-teacher">TEACHER</span></div>
