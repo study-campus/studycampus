@@ -32,13 +32,13 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .nav-right { display: flex; align-items: center; }
 
 /* 🔥 움직이는 띠배너 (Marquee) */
-.rolling-banner-container { width: 100%; background: #1e3a8a; color: #93c5fd; padding: 12px 0; overflow: hidden; display: flex; white-space: nowrap; font-weight: 700; font-size: 15px; position: relative; border-bottom: 1px solid rgba(147, 197, 253, 0.2);}
+.rolling-banner-container { width: 100%; background: linear-gradient(90deg, #1e3a8a, #1e293b); border: 1px solid #3b82f6; border-radius: 12px; color: #bfdbfe; padding: 14px 0; overflow: hidden; display: flex; white-space: nowrap; font-weight: 700; font-size: 15px; position: relative; margin-bottom: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);}
 .rolling-banner { display: flex; animation: rolling 20s linear infinite; }
 .rolling-banner span { padding: 0 50px; }
 @keyframes rolling { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
 .landing-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; }
-.hero-banner { background: linear-gradient(135deg, #4f46e5, #3b82f6); border-radius: 20px; padding: 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(59,130,246,0.3); margin-bottom: 50px;}
+.hero-banner { background: linear-gradient(135deg, #4f46e5, #3b82f6); border-radius: 20px; padding: 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(59,130,246,0.3); margin-bottom: 30px;}
 .hero-sub { font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 10px; opacity: 0.9;}
 .hero-title { font-size: 2.5rem; line-height: 1.3; font-weight: 800; margin-bottom: 10px; }
 .hero-desc { font-size: 1rem; opacity: 0.9; margin-bottom: 30px; }
@@ -59,7 +59,7 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .bottom-cta-banner { background: #2563eb; text-align: center; padding: 60px 20px; margin-top: 60px; }
 .app-footer { background: #020617; text-align: center; padding: 40px 20px; font-size: 0.8rem; line-height: 1.8; }
 
-/* 로그인 및 회원가입 모달 */
+/* 로그인 모달 */
 .auth-wrapper { display: flex; justify-content: center; align-items: center; min-height: 80vh; z-index: 10; position: relative;}
 .auth-modal { background: #111827; border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 450px; padding: 40px 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); position: relative; }
 .btn-back { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 20px; transition: 0.2s;}
@@ -84,23 +84,25 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 
 .stu-banner-top { background: #0f172a; color: white; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 .stu-banner-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); border-radius: 16px; padding: 24px; color: white; margin-bottom: 20px; position:relative; overflow:hidden;}
+.stu-banner-green { background: #10b981; border-radius: 16px; padding: 20px; color: white; margin-bottom: 20px; font-size: 20px; font-weight: 800; }
+.stu-banner-mint { background: #14b8a6; border-radius: 16px; padding: 20px; color: white; margin-bottom: 20px; font-size: 20px; font-weight: 800; }
 .stu-card { background: var(--bg-card); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); transition: 0.2s;}
 .stu-empty { background: var(--bg-card); border-radius: 16px; padding: 50px 20px; text-align: center; color: var(--text-muted); font-size: 14px; font-weight: 600; border: 1px solid var(--border); }
 .stu-btn-pill { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 14px; transition: 0.2s;}
+.stu-btn-pill:hover { border-color: var(--primary); color: var(--primary); }
 .stu-btn-pill.active { background: var(--primary); color: white; border-color: var(--primary); }
 .arrow-btn { background: rgba(255,255,255,0.2); color: white; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: 0.2s; z-index:20;}
 
-/* 알림창 디자인 */
+/* 알림 드롭다운 */
 .notif-box { position: absolute; top: 50px; right: 0; background: #1e293b; border: 1px solid #334155; border-radius: 12px; width: 320px; max-width:90vw; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 1000; overflow: hidden; }
 .notif-header { background: #0f172a; padding: 15px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #334155; }
 .notif-list { max-height: 300px; overflow-y: auto; }
 .notif-item { padding: 15px; border-bottom: 1px solid #334155; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: 0.2s; }
-.notif-item:hover { background: #334155; }
 
-/* 모달 및 팝업 시스템 */
+/* 모달 및 팝업 통합 관리 */
 .auto-popup-overlay, .modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.7); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); opacity:1; transition:0.3s;}
 .auto-popup-overlay.hidden, .modal-overlay.hidden { display: none !important; opacity:0; pointer-events: none;}
-.auto-popup-card, .modal-content { background: #1c2438; border: 1px solid #334155; border-radius: 16px; width: 95%; max-width: 420px; padding: 30px 25px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;}
+.auto-popup-card, .modal-content { background: #1c2438; border: 1px solid #334155; border-radius: 16px; width: 90%; max-width: 420px; padding: 30px 25px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;}
 .auto-popup-close { position: absolute; top: 15px; right: 15px; background: none; border: none; color: #94a3b8; font-size: 28px; font-weight: 300; cursor: pointer; padding:10px;}
 .auto-popup-tag { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #3b82f6; color: #60a5fa; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 800; margin-bottom: 15px; }
 .auto-popup-title, .modal-title { font-size: 20px; font-weight: 800; color: white; margin-bottom: 15px; line-height: 1.4;}
