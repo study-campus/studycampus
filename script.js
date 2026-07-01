@@ -14,7 +14,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔥 초기화 방어를 위한 구조 체계화
+// 🔥 데이터 초기화 방지를 위한 완벽한 기본 구조(Default State)
 const DEFAULT_STATE = {
     users: [], lectures: [], homework: [], hwSubmissions: [], community: [], notices: [], payments: [], materials: [], reports: [], alerts: [], chats: [],
     settings: {
@@ -67,10 +67,8 @@ const dbRef = ref(db, 'studycampus_data');
 onValue(dbRef, (snapshot) => {
     const serverData = snapshot.val();
     if (serverData) {
-        // 배열 및 객체 누락 방지 안전 병합
         AppState.data = {
-            ...DEFAULT_STATE,
-            ...serverData,
+            ...DEFAULT_STATE, ...serverData,
             users: serverData.users || [], lectures: serverData.lectures || [], homework: serverData.homework || [],
             hwSubmissions: serverData.hwSubmissions || [], community: serverData.community || [], notices: serverData.notices || [],
             payments: serverData.payments || [], materials: serverData.materials || [], reports: serverData.reports || [],
@@ -247,7 +245,6 @@ function renderStudentDashboard() {
 
     document.querySelectorAll('#student-bottom-nav .stu-nav-item').forEach(el => el.classList.toggle('active', el.dataset.tab === studentTab));
     
-    // 알림 리스트 연동
     const notifList = document.getElementById('notif-list'); const myAlerts = (data.alerts || []).filter(a => a.studentId === me.id); const globalNotices = (data.notices || []).map(n => ({...n, type: 'notice'})); const combinedNotifs = [...myAlerts, ...globalNotices].sort((a,b) => new Date(b.date) - new Date(a.date));
     if(notifList) { if(combinedNotifs.length === 0) notifList.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-muted);">새로운 알림이 없습니다.</div>`; else { notifList.innerHTML = combinedNotifs.slice(0, 8).map(n => `<div class="notif-item"><span style="font-size:18px;">${n.title?'📝':'📢'}</span><div><strong style="display:block; color:white; margin-bottom:4px;">${n.title || n.content.substring(0,15)}</strong><span style="color:var(--text-muted);">${n.content.substring(0,30)}...</span></div></div>`).join(''); const unreadCount = myAlerts.filter(a => !a.read).length; const badge = document.getElementById('notif-badge'); if(unreadCount > 0) badge.classList.remove('hidden'); else badge.classList.add('hidden'); } }
 
@@ -286,10 +283,7 @@ function renderStudentDashboard() {
     else if (studentTab === 'community') {
         const filter = AppState.communityFilter;
         html += `<h2 style="font-size:24px; font-weight:800; color:#60a5fa; margin-bottom:15px;">소통 커뮤니티</h2>
-        <div style="display:flex; gap:10px; margin-bottom:20px;">
-            <button class="stu-btn-pill ${filter==='all'?'active':''}" data-action="set-comm-filter" data-filter="all">전체 글 보기</button>
-            <button class="stu-btn-pill ${filter==='my'?'active':''}" data-action="set-comm-filter" data-filter="my">내 글 모아보기</button>
-        </div>
+        <div style="display:flex; gap:10px; margin-bottom:20px;"><button class="stu-btn-pill ${filter==='all'?'active':''}" data-action="set-comm-filter" data-filter="all">전체 글 보기</button><button class="stu-btn-pill ${filter==='my'?'active':''}" data-action="set-comm-filter" data-filter="my">내 글 모아보기</button></div>
         <div class="stu-card" style="padding:10px;"><form id="form-community" style="display:flex; gap:10px;"><input type="text" id="comm-text" required placeholder="질문방 작성..." style="flex:1; background:transparent; border:1px solid #334155; border-radius:8px; padding:12px 15px; color:white; outline:none; font-size:14px;"><button type="submit" class="btn-primary" style="width:auto; padding:0 20px;">등록</button></form></div>`;
         
         const commList = filter === 'my' ? (data.community || []).filter(c => c.authorId === me.id) : (data.community || []);
@@ -400,7 +394,7 @@ function checkIdleStudents() {
 setInterval(checkIdleStudents, 60000);
 
 // =========================================================
-// [통합 이벤트 위임]
+// [이벤트 통제] 클릭 동작 방어 로직 추가
 // =========================================================
 document.body.addEventListener('change', async (e) => {
     if (e.target.matches('input[type="file"]')) {
@@ -444,7 +438,7 @@ document.body.addEventListener('click', (e) => {
         else if (action === 'open-student-edit') { const me = AppState.data.users.find(u => u.id === AppState.currentUser.id) || AppState.currentUser; document.getElementById('stu-edit-name').value = me.name || ''; document.getElementById('stu-edit-school').value = me.school ? me.school.replace('등학교','') : ''; document.getElementById('stu-edit-grade').value = me.grade || '고2'; document.getElementById('stu-edit-pw').value = ''; document.getElementById('modal-student-edit').classList.remove('hidden'); }
         else if (action === 'close-student-edit') { document.getElementById('modal-student-edit').classList.add('hidden'); }
         
-        // 🔥 알림 "모두 읽음" / "모두 삭제" 핸들러 복구
+        // 🔥 알림 "모두 읽음" / "모두 삭제" 버튼 연동
         else if (action === 'read-all-notif') {
             let upd = false;
             (AppState.data.alerts || []).forEach(a => { if (a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; } });
@@ -509,9 +503,10 @@ document.body.addEventListener('click', (e) => {
             input.value = ''; fileIn.value = ''; delete fileIn.dataset.base64; delete fileIn.dataset.filename;
             syncData(); renderAdminDashboard();
         }
-    } catch(err) { console.error("클릭 이벤트 오류:", err); }
+    } catch(err) { console.error("클릭 이벤트 내부 에러 처리:", err); }
 });
 
+// 폼(Form) 제출 이벤트 
 document.body.addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
@@ -579,13 +574,14 @@ document.body.addEventListener('submit', async (e) => {
             if (file) { if(file.size > 100 * 1024 * 1024) return showToast('⚠️ 100MB 이하만 가능'); showToast("서버 전송 중... (용량이 클수록 시간이 걸립니다)"); fileData = await new Promise(res => { const r = new FileReader(); r.onload = ev => res(ev.target.result); r.readAsDataURL(file); }); fileName = file.name; }
             if(!AppState.data.materials) AppState.data.materials = []; AppState.data.materials.unshift({ id: generateId(), category: document.getElementById('mat-cat').value, title: document.getElementById('mat-title').value, desc: document.getElementById('mat-desc').value, fileData, fileName }); syncData(); showToast("업로드 완료"); e.target.reset();
         }
+        // 🔥 숙제 요일 버그 완벽 계산
         else if(e.target.id === 'form-admin-hw') {
             if(!AppState.data.homework) AppState.data.homework = []; const tVal = document.getElementById('hw-target').value; const hwDate = document.getElementById('hw-date').value; const weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일']; const dayString = hwDate ? weekDays[new Date(hwDate).getDay()] : '요일정보 없음';
             AppState.data.homework.unshift({ id: generateId(), target: tVal, type: tVal === 'all' ? 'all' : 'individual', week: document.getElementById('hw-week').value, date: hwDate, day: dayString, desc: document.getElementById('hw-desc').value });
             if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: "📝 신규 숙제 배포", content: `${document.getElementById('hw-week').value} 숙제 알림`, date: new Date().toISOString() }); syncData(); showToast("배포 완료"); e.target.reset();
         }
         else if(e.target.id === 'form-admin-notice') {
-            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: document.getElementById('adm-notice-title').value, content: document.getElementById('adm-notice-content').value, date: new Date().toISOString() }); syncData(); showToast("공지 배포 완료"); e.target.reset();
+            if(!AppState.data.notices) AppState.data.notices = []; AppState.data.notices.unshift({ id: generateId(), title: document.getElementById('adm-notice-title').value, content: document.getElementById('adm-notice-content').value, date: new Date().toISOString() }); syncData(); showToast("공지 완료"); e.target.reset();
         }
         else if(e.target.id === 'form-admin-lec') {
             if(!AppState.data.lectures) AppState.data.lectures = []; AppState.data.lectures.push({ id: generateId(), title: document.getElementById('lec-title').value, link: document.getElementById('lec-link').value }); syncData(); showToast("강의 등록 완료"); e.target.reset();
@@ -606,7 +602,7 @@ document.body.addEventListener('submit', async (e) => {
             }
             syncData(); showToast("실시간 적용 완료.");
         }
-    } catch(err) { console.error("폼 제출 에러 처리:", err); showToast("처리 중 데이터 에러가 발생했습니다."); }
+    } catch(err) { console.error("폼 제출 오류:", err); showToast("처리 중 데이터 에러가 발생했습니다."); }
 });
 
 window.addEventListener('beforeunload', () => {
