@@ -307,36 +307,15 @@ function renderStudentDashboard() {
         }
     }
     else if (studentTab === 'mypage') {
-        html += `
-            <div style="border:1px solid #7f1d1d; background:rgba(127,29,29,0.1); border-radius:12px; padding:20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <div style="display:flex; align-items:center; gap:10px; color:#f8fafc; font-weight:700;"><span style="font-size:20px;">🔑</span> 수강권 상태</div>
-                <button class="btn-white btn-sm" style="color:black; padding:8px 16px;" data-action="nav" data-target="payment">결제/연장</button>
-            </div>
-            <div class="stu-card">
-                <h3 style="font-size:16px; font-weight:700; margin-bottom:15px; display:flex; align-items:center; gap:8px;">📝 주간 분석 리포트</h3>
-                <hr style="border-color:#334155; margin-bottom:15px;">`;
-                
+        html += `<div style="border:1px solid #7f1d1d; background:rgba(127,29,29,0.1); border-radius:12px; padding:20px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;"><div style="display:flex; align-items:center; gap:10px; color:#f8fafc; font-weight:700;"><span style="font-size:20px;">🔑</span> 수강권 상태</div><button class="btn-white btn-sm" style="color:black; padding:8px 16px;" data-action="nav" data-target="payment">결제/연장</button></div><div class="stu-card"><h3 style="font-size:16px; font-weight:700; margin-bottom:15px; display:flex; align-items:center; gap:8px;">📝 주간 분석 리포트</h3><hr style="border-color:#334155; margin-bottom:15px;">`;
         const myReports = (data.reports || []).filter(r => r.studentId === me.id);
         if(myReports.length === 0) html += `<div style="text-align:center; color:#64748b; font-size:14px; padding:20px 0;">리포트 없음</div>`;
         else myReports.forEach(r => html += `<div style="background:#0f172a; padding:15px; border-radius:8px; margin-bottom:10px;"><strong style="color:#60a5fa; display:block; margin-bottom:8px;">📅 ${r.date} 발송 리포트</strong><p style="font-size:14px; line-height:1.6; white-space:pre-wrap; color:#cbd5e1;">${r.content}</p></div>`);
-
-        html += `
-            </div>
-            <div class="stu-card" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='var(--border)'" data-action="open-student-edit">
-                <h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:12px;"><span style="font-size:20px;">⚙️</span> 회원 정보 수정</h3>
-                <span style="color:#64748b; font-weight:bold; font-size:16px;">&gt;</span>
-            </div>
-            <div class="stu-card">
-                <h3 style="font-size:16px; font-weight:700; margin-bottom:15px;">1:1 카카오톡 문의센터</h3>
-                <a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" style="display:block; text-align:center; background:#3b82f6; color:white; border:none; width:100%; padding:15px; border-radius:8px; font-weight:800; cursor:pointer;">카톡으로 접수/연결</a>
-            </div>
-            <div style="text-align:right;"><button class="btn-text" style="color:#ef4444;" data-action="delete-account">회원탈퇴</button></div>
-        `;
+        html += `</div><div class="stu-card" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onmouseover="this.style.borderColor='#3b82f6'" onmouseout="this.style.borderColor='var(--border)'" data-action="open-student-edit"><h3 style="font-size:16px; font-weight:700; display:flex; align-items:center; gap:12px;"><span style="font-size:20px;">⚙️</span> 회원 정보 수정</h3><span style="color:#64748b; font-weight:bold; font-size:16px;">&gt;</span></div><div class="stu-card"><h3 style="font-size:16px; font-weight:700; margin-bottom:15px;">1:1 카카오톡 문의센터</h3><a href="http://pf.kakao.com/_xdxnxfXX" target="_blank" style="display:block; text-align:center; background:#3b82f6; color:white; border:none; width:100%; padding:15px; border-radius:8px; font-weight:800; cursor:pointer;">카톡으로 접수/연결</a></div><div style="text-align:right;"><button class="btn-text" style="color:#ef4444;" data-action="delete-account">회원탈퇴</button></div>`;
     }
     container.innerHTML = html;
 }
 
-// ------------------------- 관리자 대시보드 렌더링 -------------------------
 function renderAdminDashboard() {
     const container = document.getElementById('admin-dash-content');
     const tab = AppState.adminTab; const data = AppState.data; const set = data.settings; const ld = data.landing;
@@ -423,6 +402,29 @@ setInterval(checkIdleStudents, 60000);
 // =========================================================
 // [통합 이벤트 위임]
 // =========================================================
+document.body.addEventListener('change', async (e) => {
+    if (e.target.matches('input[type="file"]')) {
+        const files = Array.from(e.target.files || []);
+        if(files.length === 0) return;
+        const limitSize = (e.target.id === 'mat-file') ? 100 * 1024 * 1024 : 2 * 1024 * 1024;
+        const limitText = (e.target.id === 'mat-file') ? '100MB' : '2MB';
+
+        if(files.some(f => f.size > limitSize)) { e.target.value = ''; return showToast(`⚠️ ${limitText} 이하 파일만 첨부 가능합니다.`); }
+        showToast("파일 처리 중...");
+        
+        try {
+            const b64 = await Promise.all(files.map(f => new Promise(res => {
+                const r = new FileReader(); r.onload = ev => res({ name: f.name, data: ev.target.result }); r.readAsDataURL(f);
+            })));
+            
+            if (e.target.id === 'pay-req-file') { e.target.dataset.base64 = b64[0].data; showToast("✅ 사진 첨부 완료"); } 
+            else if (e.target.dataset.hwid) { if(!AppState.data.hwSubmissions) AppState.data.hwSubmissions = []; AppState.data.hwSubmissions.push({ id: generateId(), hwId: e.target.dataset.hwid, studentId: AppState.currentUser.id, studentName: AppState.currentUser.name, files: b64, status: 'pending' }); syncData(); showToast("✅ 숙제 제출 완료!"); }
+            else if (e.target.id === 'chat-file-input') { document.getElementById('chat-file-input').dataset.base64 = b64[0].data; document.getElementById('chat-file-input').dataset.filename = b64[0].name; showToast(`✅ ${b64[0].name} 첨부됨. 전송을 누르세요.`); }
+            else if (e.target.id === 'admin-chat-file-input') { document.getElementById('admin-chat-file-input').dataset.base64 = b64[0].data; document.getElementById('admin-chat-file-input').dataset.filename = b64[0].name; showToast(`✅ ${b64[0].name} 첨부됨. 전송을 누르세요.`); }
+        } catch (err) { showToast("❌ 파일 업로드 오류가 발생했습니다."); }
+    }
+});
+
 document.body.addEventListener('click', (e) => {
     try {
         const actionNode = e.target.closest('[data-action]');
@@ -442,7 +444,7 @@ document.body.addEventListener('click', (e) => {
         else if (action === 'open-student-edit') { const me = AppState.data.users.find(u => u.id === AppState.currentUser.id) || AppState.currentUser; document.getElementById('stu-edit-name').value = me.name || ''; document.getElementById('stu-edit-school').value = me.school ? me.school.replace('등학교','') : ''; document.getElementById('stu-edit-grade').value = me.grade || '고2'; document.getElementById('stu-edit-pw').value = ''; document.getElementById('modal-student-edit').classList.remove('hidden'); }
         else if (action === 'close-student-edit') { document.getElementById('modal-student-edit').classList.add('hidden'); }
         
-        // 🔥 알림 "모두 읽음" / "모두 삭제" 핸들러 추가
+        // 🔥 알림 "모두 읽음" / "모두 삭제" 핸들러 복구
         else if (action === 'read-all-notif') {
             let upd = false;
             (AppState.data.alerts || []).forEach(a => { if (a.studentId === AppState.currentUser.id && !a.read) { a.read = true; upd = true; } });
@@ -507,7 +509,7 @@ document.body.addEventListener('click', (e) => {
             input.value = ''; fileIn.value = ''; delete fileIn.dataset.base64; delete fileIn.dataset.filename;
             syncData(); renderAdminDashboard();
         }
-    } catch(err) { console.error("클릭 이벤트 내부 오류:", err); }
+    } catch(err) { console.error("클릭 이벤트 오류:", err); }
 });
 
 document.body.addEventListener('submit', async (e) => {
@@ -604,7 +606,7 @@ document.body.addEventListener('submit', async (e) => {
             }
             syncData(); showToast("실시간 적용 완료.");
         }
-    } catch(err) { console.error("폼 제출 오류:", err); showToast("처리 중 데이터 에러가 발생했습니다."); }
+    } catch(err) { console.error("폼 제출 에러 처리:", err); showToast("처리 중 데이터 에러가 발생했습니다."); }
 });
 
 window.addEventListener('beforeunload', () => {
