@@ -31,6 +31,12 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .nav-center span { cursor: pointer; padding: 8px; }
 .nav-right { display: flex; align-items: center; }
 
+/* 🔥 움직이는 띠배너 (Marquee) */
+.rolling-banner-container { width: 100%; background: #1e3a8a; color: #93c5fd; padding: 12px 0; overflow: hidden; display: flex; white-space: nowrap; font-weight: 700; font-size: 15px; position: relative; border-bottom: 1px solid rgba(147, 197, 253, 0.2);}
+.rolling-banner { display: flex; animation: rolling 20s linear infinite; }
+.rolling-banner span { padding: 0 50px; }
+@keyframes rolling { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
 .landing-container { max-width: 1000px; margin: 0 auto; padding: 40px 20px; width: 100%; }
 .hero-banner { background: linear-gradient(135deg, #4f46e5, #3b82f6); border-radius: 20px; padding: 50px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(59,130,246,0.3); margin-bottom: 50px;}
 .hero-sub { font-size: 0.75rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 10px; opacity: 0.9;}
@@ -53,7 +59,7 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .bottom-cta-banner { background: #2563eb; text-align: center; padding: 60px 20px; margin-top: 60px; }
 .app-footer { background: #020617; text-align: center; padding: 40px 20px; font-size: 0.8rem; line-height: 1.8; }
 
-/* 로그인 모달 */
+/* 로그인 및 회원가입 모달 */
 .auth-wrapper { display: flex; justify-content: center; align-items: center; min-height: 80vh; z-index: 10; position: relative;}
 .auth-modal { background: #111827; border: 1px solid var(--border); border-radius: 20px; width: 100%; max-width: 450px; padding: 40px 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); position: relative; }
 .btn-back { background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 8px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 20px; transition: 0.2s;}
@@ -78,22 +84,20 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 
 .stu-banner-top { background: #0f172a; color: white; padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
 .stu-banner-blue { background: linear-gradient(135deg, #60a5fa, #3b82f6); border-radius: 16px; padding: 24px; color: white; margin-bottom: 20px; position:relative; overflow:hidden;}
-.stu-banner-green { background: #10b981; border-radius: 16px; padding: 20px; color: white; margin-bottom: 20px; font-size: 20px; font-weight: 800; }
-.stu-banner-mint { background: #14b8a6; border-radius: 16px; padding: 20px; color: white; margin-bottom: 20px; font-size: 20px; font-weight: 800; }
 .stu-card { background: var(--bg-card); border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border); transition: 0.2s;}
 .stu-empty { background: var(--bg-card); border-radius: 16px; padding: 50px 20px; text-align: center; color: var(--text-muted); font-size: 14px; font-weight: 600; border: 1px solid var(--border); }
 .stu-btn-pill { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); padding: 10px 20px; border-radius: 20px; font-weight: 700; font-size: 14px; transition: 0.2s;}
-.stu-btn-pill:hover { border-color: var(--primary); color: var(--primary); }
 .stu-btn-pill.active { background: var(--primary); color: white; border-color: var(--primary); }
 .arrow-btn { background: rgba(255,255,255,0.2); color: white; width: 44px; height: 44px; border-radius: 50%; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: 0.2s; z-index:20;}
 
-/* 알림 드롭다운 */
+/* 알림창 디자인 */
 .notif-box { position: absolute; top: 50px; right: 0; background: #1e293b; border: 1px solid #334155; border-radius: 12px; width: 320px; max-width:90vw; box-shadow: 0 10px 30px rgba(0,0,0,0.6); z-index: 1000; overflow: hidden; }
 .notif-header { background: #0f172a; padding: 15px; font-weight: 700; font-size: 14px; border-bottom: 1px solid #334155; }
 .notif-list { max-height: 300px; overflow-y: auto; }
 .notif-item { padding: 15px; border-bottom: 1px solid #334155; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: 0.2s; }
+.notif-item:hover { background: #334155; }
 
-/* 모달 시스템 통합 */
+/* 모달 및 팝업 시스템 */
 .auto-popup-overlay, .modal-overlay { position: fixed; top:0; left:0; width:100vw; height:100vh; background: rgba(0,0,0,0.7); z-index: 999999; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(4px); opacity:1; transition:0.3s;}
 .auto-popup-overlay.hidden, .modal-overlay.hidden { display: none !important; opacity:0; pointer-events: none;}
 .auto-popup-card, .modal-content { background: #1c2438; border: 1px solid #334155; border-radius: 16px; width: 95%; max-width: 420px; padding: 30px 25px; position: relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;}
@@ -116,7 +120,7 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .comment-list { max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
 .comment-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
 
-/* 🔥 실시간 채팅 모달 UI (학생용) */
+/* 실시간 채팅 모달 UI (학생용) */
 .chat-panel { position: fixed; bottom: 85px; right: 20px; width: 350px; max-width: calc(100vw - 40px); height: 500px; max-height: calc(100vh - 160px); background: #f8fafc; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; z-index: 9999; overflow: hidden; border: 1px solid #e2e8f0; transition: 0.3s transform, 0.3s opacity; }
 .chat-panel.hidden { transform: translateY(20px); opacity: 0; pointer-events: none; }
 .chat-header { background: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
@@ -159,21 +163,18 @@ button { cursor: pointer; border: none; outline: none; z-index: 10; position: re
 .admin-chat-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; height: 600px; background: #1e293b; border-radius: 16px; border: 1px solid #334155; overflow: hidden;}
 .admin-chat-sidebar { border-right: 1px solid #334155; overflow-y: auto; background: #0f172a; }
 .admin-chat-student-item { padding: 15px; border-bottom: 1px solid #1e293b; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center;}
-.admin-chat-student-item:hover { background: #1e293b; }
 .admin-chat-student-item.active { background: rgba(37, 99, 235, 0.1); border-left: 4px solid #3b82f6; }
 .admin-chat-area { display: flex; flex-direction: column; background: #f1f5f9;}
 
 /* 관리자 미활동 알림 배너 */
-.idle-alerts-container { pointer-events: none; }
-.idle-banner { background: rgba(239, 68, 68, 0.95); color: white; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: slideDown 0.3s ease-out forwards; pointer-events: auto;}
-@keyframes slideDown { from { transform:translateY(-20px); opacity:0;} to { transform:translateY(0); opacity:1;} }
+.idle-banner { background: rgba(239, 68, 68, 0.95); color: white; padding: 12px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-bottom:10px; pointer-events: auto;}
 
 /* 카카오톡 및 토스트 */
 .kakao-fab { position: fixed; bottom: 90px; right: 20px; background-color: #FEE500; color: #000; padding: 14px 24px; border-radius: 30px; font-weight: 800; font-size: 14px; display: flex; align-items: center; gap: 8px; box-shadow: 0 6px 16px rgba(0,0,0,0.2); z-index: 9999; text-decoration: none;}
 #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 999999; display: flex; flex-direction: column; gap: 10px; align-items: center; pointer-events: none; width:90%; max-width: 400px;}
 .toast { background: var(--primary); color: white; padding: 16px 28px; border-radius: 30px; font-size: 14px; font-weight: 700; box-shadow: 0 4px 12px rgba(0,0,0,0.3); animation: toastFadeInOut 2.5s forwards; width: 100%; text-align: center;}
 
-/* 🔥 모바일 반응형 완벽 보장 */
+/* 모바일 반응형 완벽 보장 */
 @media (max-width: 900px) {
     .lecture-player-grid { grid-template-columns: 1fr; }
     .player-playlist { border-left: none; border-top: 1px solid var(--border); padding-left: 0; padding-top: 20px; height: auto;}
